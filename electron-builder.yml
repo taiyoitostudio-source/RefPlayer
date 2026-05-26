@@ -1,0 +1,21 @@
+appId: com.refplayer.app
+productName: RefPlayer
+directories:
+  output: dist
+  buildResources: build
+files:
+  - 'out/**/*'
+  - '!**/*.map'
+asarUnpack:
+  - 'node_modules/ffmpeg-static/**'
+  - 'node_modules/ffprobe-static/**'
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false

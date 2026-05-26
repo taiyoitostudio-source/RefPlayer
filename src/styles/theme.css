@@ -1,0 +1,45 @@
+:root {
+  /* Base (white) */
+  --bg-base:      #FBFAFD;
+  --bg-panel:     #FFFFFF;
+  --bg-elevated:  #F4F1F8;
+  --bg-video:     #1A1320;
+  --bg-timeline:  #FAF7FC;
+
+  /* Text */
+  --text-primary:    #1F1429;
+  --text-secondary:  #4A3B5E;
+  --text-muted:      #6B5B7D;
+  --text-on-accent:  #FFFFFF;
+  --text-disabled:   #B9B0C5;
+
+  /* Accent: dark magenta -> deep purple */
+  --accent-magenta: #8B1E5C;
+  --accent-purple:  #4B2A8A;
+  --accent-magenta-soft: #C2598E;
+  --accent-purple-soft:  #7C5BBE;
+  --gradient-accent: linear-gradient(135deg, #8B1E5C 0%, #4B2A8A 100%);
+  --gradient-accent-vertical: linear-gradient(180deg, #8B1E5C 0%, #4B2A8A 100%);
+  --gradient-accent-soft: linear-gradient(135deg, rgba(139,30,92,0.10) 0%, rgba(75,42,138,0.10) 100%);
+  --gradient-accent-hover: linear-gradient(135deg, #9F2D6E 0%, #5C36A2 100%);
+
+  /* Lines / shadow */
+  --border:        #E7E1EE;
+  --border-strong: #C9BFD7;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-soft:  0 6px 24px rgba(75, 42, 138, 0.12);
+  --shadow-card:  0 1px 3px rgba(31, 20, 41, 0.06);
+  --shadow-hover: 0 4px 16px rgba(139, 30, 92, 0.18);
+
+  /* Typography */
+  --font-mono: 'DM Mono', 'Geist Mono', ui-monospace, monospace;
+  --font-sans: 'Inter', 'Hiragino Sans', system-ui, sans-serif;
+
+  /* Layout */
+  --topbar-h:   48px;
+  --timeline-h: 96px;
+  --controls-h: 64px;
+  --sidebar-w:  300px;
+}
