@@ -14,7 +14,7 @@ export function VideoPreview() {
   const currentFrame = usePlayerStore((s) => s.currentFrame);
   const overlays = usePluginStore((s) => s.overlays);
 
-  useFrameAccuratePlayback(videoRef);
+  useFrameAccuratePlayback(videoRef, fileUrl);
 
   // Resize overlay canvas to match video display area
   useEffect(() => {

@@ -15,6 +15,7 @@ export type ActionId =
   | 'zoomTimelineIn' | 'zoomTimelineOut';
 
 export type SettingsSchema = {
+  schemaVersion: number;
   shortcuts: Record<ActionId, KeyCombo>;
   lastDisplayFps: number;
   repeat: boolean;
@@ -24,12 +25,14 @@ export type SettingsSchema = {
   pluginSettings: Record<string, unknown>;
 };
 
+const SCHEMA_VERSION = 2;
+
 export const DEFAULT_SHORTCUTS: Record<ActionId, KeyCombo> = {
   playPause:        { key: ' ' },
   stepBack:         { key: 'ArrowLeft' },
   stepForward:      { key: 'ArrowRight' },
-  setIn:            { key: 'i' },
-  setOut:           { key: 'o' },
+  setIn:            { key: '[' },
+  setOut:           { key: ']' },
   applyClipToggle:  { key: 'Enter' },
   toggleRepeat:     { key: 'r' },
   openSettings:     { key: ',', ctrl: true },
@@ -38,6 +41,7 @@ export const DEFAULT_SHORTCUTS: Record<ActionId, KeyCombo> = {
 };
 
 const DEFAULTS: SettingsSchema = {
+  schemaVersion: SCHEMA_VERSION,
   shortcuts: DEFAULT_SHORTCUTS,
   lastDisplayFps: 12,
   repeat: false,
@@ -49,6 +53,15 @@ const DEFAULTS: SettingsSchema = {
 
 class SettingsManager {
   private store = new Store<SettingsSchema>({ defaults: DEFAULTS, name: 'settings' });
+
+  constructor() {
+    // Migrate older settings whose shortcut defaults no longer match the current ones.
+    const v = this.store.get('schemaVersion');
+    if (v !== SCHEMA_VERSION) {
+      this.store.set('shortcuts', DEFAULT_SHORTCUTS);
+      this.store.set('schemaVersion', SCHEMA_VERSION);
+    }
+  }
 
   get<K extends keyof SettingsSchema>(key: K): SettingsSchema[K] {
     return this.store.get(key);

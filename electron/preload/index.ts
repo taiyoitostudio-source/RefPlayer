@@ -57,10 +57,10 @@ const api = {
     >,
 
   pathToFileURL: (path: string) => {
-    // Use the privileged `local-file://` scheme so the dev-mode renderer (http://localhost)
-    // can stream videos. The main process resolves it to an actual file read.
+    // Convert Windows backslashes and return a file:// URL.
+    // webSecurity is disabled in dev mode so file:// loads work from http://localhost.
     const normalised = path.replace(/\\/g, '/');
-    return `local-file:///${encodeURI(normalised).replace(/#/g, '%23').replace(/\?/g, '%3F')}`;
+    return `file:///${encodeURI(normalised).replace(/#/g, '%23').replace(/\?/g, '%3F')}`;
   },
 };
 

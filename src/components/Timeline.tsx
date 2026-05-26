@@ -282,7 +282,7 @@ export function Timeline() {
     const frameAtCursor = xToFrame(e.clientX);
 
     const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
-    const newZoom = clamp(s.timelineZoom * factor, 1, 100);
+    const newZoom = clamp(s.timelineZoom * factor, 1, 20);
     const newVisible = rangeLen / newZoom;
     // Keep frame under cursor fixed
     const newViewStart = frameAtCursor - (localX / r.width) * newVisible;

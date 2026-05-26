@@ -52,6 +52,8 @@ export function useShortcuts() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Ignore events still inside IME composition
+      if (e.isComposing || e.keyCode === 229) return;
       // Don't interfere with text input fields
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {

@@ -1,15 +1,7 @@
-import { app, BrowserWindow, shell, protocol, net } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { registerIpcHandlers } from './ipc';
 import { settingsManager } from './settings';
-
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: 'local-file',
-    privileges: { stream: true, supportFetchAPI: true, secure: true, standard: true, bypassCSP: true },
-  },
-]);
 
 let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
@@ -34,6 +26,9 @@ function createMainWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      // Allow the renderer to load local file:// URLs for video playback.
+      // This is safe for a desktop app that only plays user-chosen local files.
+      webSecurity: !isDev,
     },
   });
 
@@ -77,6 +72,7 @@ export function openSettingsWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      webSecurity: !isDev,
     },
   });
   settingsWindow.on('ready-to-show', () => settingsWindow?.show());
@@ -92,17 +88,6 @@ export function openSettingsWindow() {
 export function getMainWindow() { return mainWindow; }
 
 app.whenReady().then(() => {
-  // Serve local files (e.g. user-selected videos) through a privileged protocol so the renderer
-  // can stream them from http://localhost during dev without hitting cross-origin restrictions.
-  protocol.handle('local-file', (request) => {
-    const url = new URL(request.url);
-    // host portion may contain the drive letter on Windows ("local-file://C:/...").
-    const rawPath = decodeURIComponent(url.pathname);
-    const driveOrHost = decodeURIComponent(url.hostname);
-    const fullPath = driveOrHost ? `${driveOrHost}${rawPath}` : rawPath.replace(/^\//, '');
-    return net.fetch(pathToFileURL(fullPath).toString());
-  });
-
   registerIpcHandlers();
   createMainWindow();
 

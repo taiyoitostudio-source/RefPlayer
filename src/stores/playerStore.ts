@@ -190,6 +190,6 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     set({ isClipped: false });
   },
 
-  setTimelineZoom: (zoom) => set({ timelineZoom: clamp(zoom, 1, 50) }),
+  setTimelineZoom: (zoom) => set({ timelineZoom: clamp(zoom, 1, 20) }),
   setTimelinePan: (panFrame) => set({ timelinePanFrame: Math.max(0, panFrame) }),
 }));

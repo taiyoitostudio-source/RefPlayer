@@ -109,8 +109,9 @@ export async function exportMp4(opts: ExportOpts): Promise<void> {
     args.push('-c', 'copy');
   } else {
     args.push('-r', targetFps.toString());
-    args.push('-c:v', 'libx264', '-preset', 'medium', '-crf', '18');
-    args.push('-c:a', 'aac');
+    args.push('-threads', '2');
+    args.push('-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23');
+    args.push('-c:a', 'aac', '-ac', '2');
   }
   args.push('-progress', 'pipe:1', '-nostats');
   args.push(outputPath);
