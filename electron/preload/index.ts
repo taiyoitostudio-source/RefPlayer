@@ -58,6 +58,14 @@ const api = {
 
   openPluginsFolder: () => ipcRenderer.invoke('plugins:openFolder') as Promise<void>,
 
+  getPendingOpenFile: () =>
+    ipcRenderer.invoke('app:getPendingOpenFile') as Promise<string | null>,
+  onOpenFile: (cb: (path: string) => void) => {
+    const listener = (_: unknown, path: string) => cb(path);
+    ipcRenderer.on('app:openFile', listener);
+    return () => ipcRenderer.removeListener('app:openFile', listener);
+  },
+
   pathToFileURL: (path: string) => {
     // Convert Windows backslashes and return a file:// URL.
     // webSecurity is disabled in dev mode so file:// loads work from http://localhost.

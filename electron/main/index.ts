@@ -1,4 +1,5 @@
 import { app, BrowserWindow, shell } from 'electron';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { registerIpcHandlers } from './ipc';
 import { settingsManager } from './settings';
@@ -7,6 +8,39 @@ let mainWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 
 const isDev = !app.isPackaged;
+
+const VIDEO_EXTS = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v', '.wmv', '.flv', '.ogv', '.ts'];
+
+/**
+ * Extract a video file path from process argv. When the app is launched via
+ * "Open with" or by double-clicking an associated file, the path is appended
+ * to argv. We skip flags and non-file args, and only accept paths with a
+ * known video extension that exist on disk.
+ */
+function extractFilePathFromArgv(argv: string[]): string | null {
+  for (const arg of argv) {
+    if (!arg || arg.startsWith('-')) continue;
+    const lower = arg.toLowerCase();
+    if (!VIDEO_EXTS.some((ext) => lower.endsWith(ext))) continue;
+    try {
+      if (existsSync(arg)) return arg;
+    } catch {
+      /* ignore */
+    }
+  }
+  return null;
+}
+
+/**
+ * Pending file path captured from argv before the renderer is ready.
+ * The renderer queries this once via IPC on startup, then it's cleared.
+ */
+let pendingOpenFile: string | null = null;
+export function consumePendingOpenFile(): string | null {
+  const f = pendingOpenFile;
+  pendingOpenFile = null;
+  return f;
+}
 
 function createMainWindow() {
   const bounds = settingsManager.get('windowBounds') ?? { width: 1280, height: 800 };
@@ -87,15 +121,34 @@ export function openSettingsWindow() {
 
 export function getMainWindow() { return mainWindow; }
 
-app.whenReady().then(() => {
-  registerIpcHandlers();
-  createMainWindow();
+// ---- Single-instance lock + file association ----
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  pendingOpenFile = extractFilePathFromArgv(process.argv);
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+  app.on('second-instance', (_event, argv) => {
+    const file = extractFilePathFromArgv(argv);
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      if (file) mainWindow.webContents.send('app:openFile', file);
+    } else if (file) {
+      pendingOpenFile = file;
+    }
   });
-});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+  app.whenReady().then(() => {
+    registerIpcHandlers();
+    createMainWindow();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+}

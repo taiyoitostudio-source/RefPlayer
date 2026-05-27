@@ -66,6 +66,8 @@ declare global {
       openSettingsWindow: () => Promise<void>;
       loadPlugins: () => Promise<LoadedPluginRecord[]>;
       openPluginsFolder: () => Promise<void>;
+      getPendingOpenFile: () => Promise<string | null>;
+      onOpenFile: (cb: (path: string) => void) => () => void;
       pathToFileURL: (path: string) => string;
     };
   }

@@ -10,6 +10,7 @@ import { usePlayerStore } from './stores/playerStore';
 import { useShortcuts } from './hooks/useShortcuts';
 import { initPluginHost } from './plugins/host';
 import { loadUserPlugins } from './plugins/userLoader';
+import { openVideoFile } from './lib/openVideoFile';
 
 export function App() {
   useShortcuts();
@@ -26,12 +27,30 @@ export function App() {
 
       initPluginHost();
       await loadUserPlugins();
+
+      // If the app was launched with a file path (Open with / double-click),
+      // load it now that all stores and plugins are ready.
+      try {
+        const pending = await window.refplayer.getPendingOpenFile();
+        if (pending) await openVideoFile(pending);
+      } catch (err) {
+        console.warn('[App] failed to load pending open file', err);
+      }
     })();
 
-    const off = window.refplayer.onSettingsChanged((s) => {
+    const offSettings = window.refplayer.onSettingsChanged((s) => {
       useSettingsStore.getState().receiveExternal(s);
     });
-    return off;
+
+    // While the app is already running, "Open with" routes through here.
+    const offOpenFile = window.refplayer.onOpenFile((path) => {
+      void openVideoFile(path);
+    });
+
+    return () => {
+      offSettings();
+      offOpenFile();
+    };
   }, []);
 
   return (

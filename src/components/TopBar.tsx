@@ -1,5 +1,6 @@
 import { usePlayerStore } from '@/stores/playerStore';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { openVideoFile } from '@/lib/openVideoFile';
 import { useExportToast } from './ToastHost';
 
 export function TopBar() {
@@ -11,46 +12,7 @@ export function TopBar() {
   const onOpen = async () => {
     const path = await window.refplayer.openVideoDialog();
     if (!path) return;
-
-    // First, load the video immediately so the user sees it right away.
-    // We read basic metadata (duration, dimensions) directly from the HTML5 video element,
-    // then attempt an accurate FPS probe via ffprobe in parallel.
-    const fileUrl = window.refplayer.pathToFileURL(path);
-
-    // Probe via HTML5 video element to get at minimum duration/width/height.
-    const htmlMeta = await new Promise<{ duration: number; width: number; height: number }>(
-      (resolve) => {
-        const v = document.createElement('video');
-        v.preload = 'metadata';
-        v.src = fileUrl;
-        const done = () =>
-          resolve({
-            duration: isFinite(v.duration) ? v.duration : 0,
-            width: v.videoWidth || 1920,
-            height: v.videoHeight || 1080,
-          });
-        v.addEventListener('loadedmetadata', done, { once: true });
-        v.addEventListener('error', done, { once: true });
-        // Fallback if neither event fires within 3 s
-        setTimeout(done, 3000);
-      },
-    );
-
-    // Try ffprobe for accurate FPS; if it fails use 30 fps as safe default.
-    let meta = {
-      sourceFps: 30,
-      totalSourceFrames: Math.round(htmlMeta.duration * 30),
-      ...htmlMeta,
-    };
-    try {
-      const probed = await window.refplayer.probeVideo(path);
-      meta = probed;
-    } catch (err) {
-      console.warn('[TopBar] ffprobe failed, using 30fps fallback:', err);
-      showToast({ kind: 'info', message: 'FPS取得に失敗しました。30FPSで動作します。' });
-    }
-
-    usePlayerStore.getState().loadVideo(path, meta);
+    await openVideoFile(path, (msg) => showToast({ kind: 'info', message: msg }));
   };
 
   const onExport = async () => {

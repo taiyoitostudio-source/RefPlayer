@@ -9,6 +9,31 @@ files:
 asarUnpack:
   - 'node_modules/ffmpeg-static/**'
   - 'node_modules/ffprobe-static/**'
+fileAssociations:
+  - ext: mp4
+    name: MP4 Video
+    description: MP4 Video File
+    role: Viewer
+  - ext: mov
+    name: QuickTime Movie
+    description: QuickTime Movie File
+    role: Viewer
+  - ext: avi
+    name: AVI Video
+    description: AVI Video File
+    role: Viewer
+  - ext: mkv
+    name: Matroska Video
+    description: Matroska Video File
+    role: Viewer
+  - ext: webm
+    name: WebM Video
+    description: WebM Video File
+    role: Viewer
+  - ext: m4v
+    name: M4V Video
+    description: M4V Video File
+    role: Viewer
 win:
   target:
     - target: nsis

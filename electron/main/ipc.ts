@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import { probeVideo, exportMp4 } from './ffmpeg';
 import { settingsManager, type SettingsSchema } from './settings';
 import { loadAllPlugins, userPluginsRoot } from './plugin-loader';
-import { openSettingsWindow, getMainWindow } from './index';
+import { openSettingsWindow, getMainWindow, consumePendingOpenFile } from './index';
 
 export function registerIpcHandlers() {
   ipcMain.handle('dialog:openVideo', async () => {
@@ -67,4 +67,8 @@ export function registerIpcHandlers() {
     await fs.mkdir(dir, { recursive: true }).catch(() => {});
     await shell.openPath(dir);
   });
+
+  // Returns a file path captured from argv at startup ("Open with" launches),
+  // then clears it so subsequent calls return null.
+  ipcMain.handle('app:getPendingOpenFile', () => consumePendingOpenFile());
 }
