@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { usePluginStore, type OverlayRenderer } from '@/stores/pluginStore';
+import { usePluginStore, type OverlayRenderer, type PanelMountFn } from '@/stores/pluginStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 
@@ -15,8 +15,15 @@ export type PluginPlayerState = {
 };
 
 export type PluginAPI = {
-  /** Register a panel UI in the right sidebar. */
-  registerPanel(node: ReactNode, opts: { title: string; defaultOpen?: boolean }): void;
+  /**
+   * Register a panel UI in the right sidebar.
+   * Pass a ReactNode (builtin plugins) OR a mount function (user plugins).
+   * The mount function receives a root HTMLElement and may return a cleanup callback.
+   */
+  registerPanel(
+    content: ReactNode | PanelMountFn,
+    opts: { title: string; defaultOpen?: boolean },
+  ): void;
 
   /** Register a canvas overlay drawn on top of the video. */
   registerOverlay(render: OverlayRenderer): void;
@@ -36,18 +43,21 @@ export type PluginAPI = {
   /** Read/write plugin-scoped settings (persisted). */
   getSetting<T>(key: string, defaultValue: T): T;
   setSetting(key: string, value: unknown): void;
+
+  /** Force the overlay canvas to redraw (call after settings changes that affect rendering). */
+  requestRedraw(): void;
 };
 
 export function createPluginAPI(pluginId: string): PluginAPI {
   const projectKey = (k: string) => `${pluginId}::${k}`;
 
   return {
-    registerPanel(node, opts) {
+    registerPanel(content, opts) {
       usePluginStore.getState().addPanel({
         pluginId,
         title: opts.title,
         defaultOpen: opts.defaultOpen ?? true,
-        node,
+        node: content,
       });
     },
 
@@ -97,6 +107,10 @@ export function createPluginAPI(pluginId: string): PluginAPI {
       const s = useSettingsStore.getState();
       const next = { ...(s.pluginSettings ?? {}), [projectKey(key)]: value };
       void s.update({ pluginSettings: next });
+    },
+
+    requestRedraw() {
+      usePluginStore.getState().bumpOverlayRevision();
     },
   };
 }

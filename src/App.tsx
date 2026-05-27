@@ -9,6 +9,7 @@ import { useSettingsStore } from './stores/settingsStore';
 import { usePlayerStore } from './stores/playerStore';
 import { useShortcuts } from './hooks/useShortcuts';
 import { initPluginHost } from './plugins/host';
+import { loadUserPlugins } from './plugins/userLoader';
 
 export function App() {
   useShortcuts();
@@ -24,6 +25,7 @@ export function App() {
       p.setRepeat(s.repeat);
 
       initPluginHost();
+      await loadUserPlugins();
     })();
 
     const off = window.refplayer.onSettingsChanged((s) => {

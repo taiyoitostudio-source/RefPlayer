@@ -93,29 +93,52 @@ export type ExportOpts = {
   onProgress?: (percent: number) => void;
 };
 
-export async function exportMp4(opts: ExportOpts): Promise<void> {
-  const { inputPath, outputPath, startSec, endSec, targetFps, sourceFps, isClipped, onProgress } = opts;
-  const durationSec = Math.max(0.001, endSec - startSec);
+type H264Encoder = 'h264_nvenc' | 'h264_qsv' | 'h264_amf' | 'libx264';
 
-  const noReencode = Math.abs(targetFps - sourceFps) < 0.001 && !isClipped;
+const ENCODER_PRIORITY: H264Encoder[] = ['h264_nvenc', 'h264_qsv', 'h264_amf', 'libx264'];
 
-  const args: string[] = ['-y'];
-  if (isClipped) {
-    args.push('-ss', startSec.toString(), '-to', endSec.toString());
+let cachedEncoderPromise: Promise<H264Encoder> | null = null;
+
+async function detectH264Encoder(): Promise<H264Encoder> {
+  if (cachedEncoderPromise) return cachedEncoderPromise;
+  cachedEncoderPromise = (async () => {
+    try {
+      const { stdout } = await runCapture(ffmpegPath(), ['-hide_banner', '-encoders']);
+      for (const enc of ENCODER_PRIORITY) {
+        // Encoder lines look like: " V....D h264_nvenc            NVIDIA NVENC H.264 encoder"
+        const re = new RegExp(`^\\s*V\\S*\\s+${enc}\\b`, 'm');
+        if (re.test(stdout)) {
+          console.log(`[ffmpeg] selected video encoder: ${enc}`);
+          return enc;
+        }
+      }
+    } catch (err) {
+      console.warn('[ffmpeg] encoder detection failed, falling back to libx264:', err);
+    }
+    return 'libx264';
+  })();
+  return cachedEncoderPromise;
+}
+
+function buildVideoEncoderArgs(encoder: H264Encoder): string[] {
+  switch (encoder) {
+    case 'h264_nvenc':
+      return ['-c:v', 'h264_nvenc', '-preset', 'p4', '-tune', 'hq', '-rc', 'vbr', '-cq', '23', '-b:v', '0'];
+    case 'h264_qsv':
+      return ['-c:v', 'h264_qsv', '-preset', 'medium', '-global_quality', '23'];
+    case 'h264_amf':
+      return ['-c:v', 'h264_amf', '-quality', 'balanced', '-rc', 'cqp', '-qp_i', '22', '-qp_p', '24'];
+    case 'libx264':
+    default:
+      return ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23'];
   }
-  args.push('-i', inputPath);
+}
 
-  if (noReencode) {
-    args.push('-c', 'copy');
-  } else {
-    args.push('-r', targetFps.toString());
-    args.push('-threads', '2');
-    args.push('-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23');
-    args.push('-c:a', 'aac', '-ac', '2');
-  }
-  args.push('-progress', 'pipe:1', '-nostats');
-  args.push(outputPath);
-
+function runFfmpegEncode(
+  args: string[],
+  durationSec: number,
+  onProgress?: (percent: number) => void,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(ffmpegPath(), args, { windowsHide: true });
     let stderr = '';
@@ -137,12 +160,54 @@ export async function exportMp4(opts: ExportOpts): Promise<void> {
     child.stderr.on('data', (d) => { stderr += d.toString('utf8'); });
     child.on('error', reject);
     child.on('close', (code) => {
-      if (code === 0) {
-        onProgress?.(100);
-        resolve();
-      } else {
-        reject(new Error(`ffmpeg exited with code ${code}\n${stderr.slice(-2000)}`));
-      }
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg exited with code ${code}\n${stderr.slice(-2000)}`));
     });
   });
+}
+
+function buildArgs(opts: ExportOpts, encoder: H264Encoder | null): string[] {
+  const { inputPath, outputPath, startSec, endSec, targetFps, isClipped } = opts;
+  const args: string[] = ['-y'];
+  if (isClipped) {
+    args.push('-ss', startSec.toString(), '-to', endSec.toString());
+  }
+  args.push('-i', inputPath);
+
+  if (encoder === null) {
+    args.push('-c', 'copy');
+  } else {
+    args.push('-r', targetFps.toString());
+    args.push(...buildVideoEncoderArgs(encoder));
+    args.push('-c:a', 'aac', '-ac', '2');
+  }
+  args.push('-progress', 'pipe:1', '-nostats');
+  args.push(outputPath);
+  return args;
+}
+
+export async function exportMp4(opts: ExportOpts): Promise<void> {
+  const { startSec, endSec, targetFps, sourceFps, isClipped, onProgress } = opts;
+  const durationSec = Math.max(0.001, endSec - startSec);
+  const noReencode = Math.abs(targetFps - sourceFps) < 0.001 && !isClipped;
+
+  if (noReencode) {
+    await runFfmpegEncode(buildArgs(opts, null), durationSec, onProgress);
+    onProgress?.(100);
+    return;
+  }
+
+  const encoder = await detectH264Encoder();
+  try {
+    await runFfmpegEncode(buildArgs(opts, encoder), durationSec, onProgress);
+  } catch (err) {
+    if (encoder !== 'libx264') {
+      console.warn(`[ffmpeg] ${encoder} failed, retrying with libx264:`, err);
+      cachedEncoderPromise = Promise.resolve('libx264');
+      await runFfmpegEncode(buildArgs(opts, 'libx264'), durationSec, onProgress);
+    } else {
+      throw err;
+    }
+  }
+  onProgress?.(100);
 }

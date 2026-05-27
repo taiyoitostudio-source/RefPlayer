@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePluginStore } from '@/stores/pluginStore';
+import { usePluginStore, type PanelMountFn } from '@/stores/pluginStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 
 export function PluginSidebar() {
@@ -71,9 +71,10 @@ function PanelCard({
 }: {
   title: string;
   defaultOpen: boolean;
-  children: React.ReactNode;
+  children: React.ReactNode | PanelMountFn;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const isMountFn = typeof children === 'function';
   return (
     <div
       className="panel"
@@ -104,7 +105,35 @@ function PanelCard({
           fontSize: 12,
         }}>▶</span>
       </button>
-      {open && <div style={{ padding: '10px 14px 14px' }}>{children}</div>}
+      {open && (
+        <div style={{ padding: '10px 14px 14px' }}>
+          {isMountFn ? (
+            <DomPanelMount mount={children as PanelMountFn} />
+          ) : (
+            (children as React.ReactNode)
+          )}
+        </div>
+      )}
     </div>
   );
+}
+
+function DomPanelMount({ mount }: { mount: PanelMountFn }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    let cleanup: (() => void) | undefined;
+    try {
+      const result = mount(root);
+      if (typeof result === 'function') cleanup = result;
+    } catch (err) {
+      console.error('[plugin panel] mount failed', err);
+    }
+    return () => {
+      try { cleanup?.(); } catch (err) { console.warn('[plugin panel] cleanup failed', err); }
+      if (root) root.innerHTML = '';
+    };
+  }, [mount]);
+  return <div ref={rootRef} />;
 }

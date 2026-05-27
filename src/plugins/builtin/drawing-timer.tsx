@@ -3,9 +3,9 @@ import type { PluginAPI } from '../api';
 
 type TimerSettings = { seconds: number };
 
-const DEFAULTS: TimerSettings = { seconds: 5 };
+const DEFAULTS: TimerSettings = { seconds: 30 };
 
-const PRESETS = [3, 5, 10];
+const PRESETS = [15, 30, 60];
 
 export function registerDrawingTimer(api: PluginAPI) {
   api.registerPanel(<TimerPanel api={api} />, { title: 'ドローイングタイマー', defaultOpen: false });
@@ -13,9 +13,10 @@ export function registerDrawingTimer(api: PluginAPI) {
 
 function TimerPanel({ api }: { api: PluginAPI }) {
   const stored = api.getSetting<TimerSettings>('settings', DEFAULTS);
-  const [seconds, setSeconds] = useState<number>(stored.seconds ?? DEFAULTS.seconds);
+  const initialSeconds = PRESETS.includes(stored.seconds) ? stored.seconds : DEFAULTS.seconds;
+  const [seconds, setSeconds] = useState<number>(initialSeconds);
   const [running, setRunning] = useState<boolean>(false);
-  const [remaining, setRemaining] = useState<number>(stored.seconds ?? DEFAULTS.seconds);
+  const [remaining, setRemaining] = useState<number>(initialSeconds);
   const lastTickRef = useRef<number>(0);
 
   useEffect(() => {

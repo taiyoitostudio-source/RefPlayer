@@ -48,8 +48,44 @@ export function SettingsWindow() {
       </header>
 
       <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
-        {loaded ? <ShortcutEditor /> : <div style={{ color: 'var(--text-muted)' }}>読み込み中…</div>}
+        {loaded ? (
+          <>
+            <ShortcutEditor />
+            <PluginsSection />
+          </>
+        ) : (
+          <div style={{ color: 'var(--text-muted)' }}>読み込み中…</div>
+        )}
       </div>
     </div>
+  );
+}
+
+function PluginsSection() {
+  return (
+    <section style={{ marginTop: 32 }}>
+      <h2
+        style={{
+          fontSize: 14,
+          fontWeight: 700,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color: 'var(--text-secondary)',
+          marginBottom: 10,
+        }}
+      >
+        プラグイン
+      </h2>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 12 }}>
+        プラグインフォルダにプラグインのフォルダを配置し、アプリを再起動すると追加されます。
+      </p>
+      <button
+        className="btn-secondary"
+        onClick={() => void window.refplayer.openPluginsFolder()}
+        style={{ padding: '8px 14px', fontSize: 13 }}
+      >
+        プラグインフォルダを開く
+      </button>
+    </section>
   );
 }

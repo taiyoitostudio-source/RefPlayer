@@ -52,9 +52,11 @@ const api = {
           panel?: { title: string; defaultOpen?: boolean };
         };
         code: string;
-        source: 'builtin' | 'user';
+        source: 'user';
       }>
     >,
+
+  openPluginsFolder: () => ipcRenderer.invoke('plugins:openFolder') as Promise<void>,
 
   pathToFileURL: (path: string) => {
     // Convert Windows backslashes and return a file:// URL.

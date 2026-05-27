@@ -3,6 +3,8 @@ import { usePlayerStore } from '@/stores/playerStore';
 import { displayFrameToTime, sourceToDisplayFrame, timeToFrame } from '@/utils/frameMath';
 import type { PluginAPI } from '../api';
 
+const MAX_ONION = 5;
+
 type OnionSettings = {
   enabled: boolean;
   prevN: number;
@@ -95,13 +97,14 @@ function drawTintedFrame(
   sctx.clearRect(0, 0, shared.scratch.width, shared.scratch.height);
   sctx.globalCompositeOperation = 'source-over';
   sctx.drawImage(video, 0, 0, shared.scratch.width, shared.scratch.height);
-  // Tint: replace colour while preserving alpha
-  sctx.globalCompositeOperation = 'source-in';
+  // Tint via multiply: white→tint, black stays black, midtones shift toward tint
+  sctx.globalCompositeOperation = 'multiply';
   sctx.fillStyle = color;
   sctx.fillRect(0, 0, shared.scratch.width, shared.scratch.height);
 
   ctx.save();
   ctx.globalAlpha = alpha;
+  ctx.globalCompositeOperation = 'multiply';
   ctx.drawImage(shared.scratch, dx, dy, dw, dh);
   ctx.restore();
 }
@@ -115,38 +118,65 @@ function OnionPanel({ api }: { api: PluginAPI }) {
 
   const prevRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const nextRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const prevTargets = useRef<number[]>([]);
+  const nextTargets = useRef<number[]>([]);
+
+  // Pre-mount up to MAX_ONION hidden videos once the user enables onion skin for the
+  // current file. We keep them mounted (even if prevN/nextN later goes lower or
+  // enabled toggles off) until fileUrl changes, so adjusting the slider never spawns
+  // a new <video>/decoder pair — which is what was producing repeated
+  // "Unsupported pixel format: -1" warnings from Chromium's internal ffmpeg.
+  const [mountCount, setMountCount] = useState(0);
+  useEffect(() => {
+    setMountCount(0);
+  }, [fileUrl]);
+  useEffect(() => {
+    if (s.enabled && mountCount < MAX_ONION) setMountCount(MAX_ONION);
+  }, [s.enabled, mountCount]);
 
   useEffect(() => {
     shared.settings = s;
     api.setSetting('settings', s);
+    api.requestRedraw();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s]);
 
-  // Keep shared.prevVideos / nextVideos in sync with refs
+  // Keep shared.prevVideos / nextVideos in sync with refs, sliced to the active range.
   useEffect(() => {
-    shared.prevVideos = prevRefs.current.filter(Boolean) as HTMLVideoElement[];
-    shared.nextVideos = nextRefs.current.filter(Boolean) as HTMLVideoElement[];
-  }, [s.prevN, s.nextN, fileUrl]);
+    const allPrev = prevRefs.current.filter(Boolean) as HTMLVideoElement[];
+    const allNext = nextRefs.current.filter(Boolean) as HTMLVideoElement[];
+    shared.prevVideos = allPrev.slice(0, s.prevN);
+    shared.nextVideos = allNext.slice(0, s.nextN);
+  }, [s.prevN, s.nextN, fileUrl, mountCount]);
 
-  // When currentFrame changes, seek each hidden video to the appropriate frame
+  // When currentFrame or active counts change, seek each ACTIVE hidden video to the
+  // appropriate frame. Targets for inactive slots are still updated so that when the
+  // slot becomes active later, the next pass will catch it up.
+  // We never seek before HAVE_METADATA (readyState>=1) — that triggers Chromium to
+  // query pixel format before decoder init and produces "Unsupported pixel format: -1".
   useEffect(() => {
     if (!fileUrl || !sourceFps) return;
-    for (let i = 0; i < s.prevN; i++) {
-      const v = prevRefs.current[i];
-      if (!v) continue;
+    const seekIfReady = (v: HTMLVideoElement | null, t: number) => {
+      if (!v) return;
+      if (v.readyState >= 1 && Math.abs(v.currentTime - t) > 1e-4) {
+        v.currentTime = t;
+      }
+    };
+    for (let i = 0; i < MAX_ONION; i++) {
       const targetDisplay = currentFrame - (i + 1);
-      v.currentTime = displayFrameToTime(Math.max(0, targetDisplay), sourceFps, displayFps);
+      const t = displayFrameToTime(Math.max(0, targetDisplay), sourceFps, displayFps);
+      prevTargets.current[i] = t;
+      if (i < s.prevN) seekIfReady(prevRefs.current[i], t);
     }
-    for (let i = 0; i < s.nextN; i++) {
-      const v = nextRefs.current[i];
-      if (!v) continue;
+    for (let i = 0; i < MAX_ONION; i++) {
       const targetDisplay = currentFrame + (i + 1);
-      v.currentTime = displayFrameToTime(targetDisplay, sourceFps, displayFps);
+      const t = displayFrameToTime(targetDisplay, sourceFps, displayFps);
+      nextTargets.current[i] = t;
+      if (i < s.nextN) seekIfReady(nextRefs.current[i], t);
     }
-  }, [currentFrame, fileUrl, sourceFps, displayFps, s.prevN, s.nextN]);
+  }, [currentFrame, fileUrl, sourceFps, displayFps, s.prevN, s.nextN, mountCount]);
 
-  const prevArr = useMemo(() => Array.from({ length: s.prevN }), [s.prevN]);
-  const nextArr = useMemo(() => Array.from({ length: s.nextN }), [s.nextN]);
+  const slotArr = useMemo(() => Array.from({ length: mountCount }), [mountCount]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -188,28 +218,41 @@ function OnionPanel({ api }: { api: PluginAPI }) {
         onChange={(v) => setS({ ...s, opacityDecay: v })}
       />
 
-      {/* Hidden video elements for seeking onion frames */}
+      {/* Hidden video elements for seeking onion frames. Always mount MAX_ONION
+          once enabled so adjusting prevN/nextN never spawns or destroys decoders. */}
       <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
         {fileUrl &&
-          prevArr.map((_, i) => (
+          slotArr.map((_, i) => (
             <video
               key={`p-${i}`}
               ref={(el) => { prevRefs.current[i] = el; }}
               src={fileUrl}
               muted
               preload="auto"
-              crossOrigin="anonymous"
+              onLoadedMetadata={(e) => {
+                const t = prevTargets.current[i];
+                if (t !== undefined && Math.abs(e.currentTarget.currentTime - t) > 1e-4) {
+                  e.currentTarget.currentTime = t;
+                }
+              }}
+              onSeeked={() => api.requestRedraw()}
             />
           ))}
         {fileUrl &&
-          nextArr.map((_, i) => (
+          slotArr.map((_, i) => (
             <video
               key={`n-${i}`}
               ref={(el) => { nextRefs.current[i] = el; }}
               src={fileUrl}
               muted
               preload="auto"
-              crossOrigin="anonymous"
+              onLoadedMetadata={(e) => {
+                const t = nextTargets.current[i];
+                if (t !== undefined && Math.abs(e.currentTarget.currentTime - t) > 1e-4) {
+                  e.currentTarget.currentTime = t;
+                }
+              }}
+              onSeeked={() => api.requestRedraw()}
             />
           ))}
       </div>

@@ -1,7 +1,8 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron';
+import { ipcMain, dialog, BrowserWindow, shell } from 'electron';
+import { promises as fs } from 'node:fs';
 import { probeVideo, exportMp4 } from './ffmpeg';
 import { settingsManager, type SettingsSchema } from './settings';
-import { loadAllPlugins } from './plugin-loader';
+import { loadAllPlugins, userPluginsRoot } from './plugin-loader';
 import { openSettingsWindow, getMainWindow } from './index';
 
 export function registerIpcHandlers() {
@@ -59,5 +60,11 @@ export function registerIpcHandlers() {
 
   ipcMain.handle('plugins:loadAll', async () => {
     return await loadAllPlugins();
+  });
+
+  ipcMain.handle('plugins:openFolder', async () => {
+    const dir = userPluginsRoot();
+    await fs.mkdir(dir, { recursive: true }).catch(() => {});
+    await shell.openPath(dir);
   });
 }

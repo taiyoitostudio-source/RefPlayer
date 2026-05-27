@@ -41,7 +41,7 @@ export type PluginManifest = {
 export type LoadedPluginRecord = {
   manifest: PluginManifest;
   code: string;
-  source: 'builtin' | 'user';
+  source: 'user';
 };
 
 declare global {
@@ -65,6 +65,7 @@ declare global {
       onSettingsChanged: (cb: (s: Settings) => void) => () => void;
       openSettingsWindow: () => Promise<void>;
       loadPlugins: () => Promise<LoadedPluginRecord[]>;
+      openPluginsFolder: () => Promise<void>;
       pathToFileURL: (path: string) => string;
     };
   }

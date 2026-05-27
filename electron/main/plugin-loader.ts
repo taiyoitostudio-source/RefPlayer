@@ -13,10 +13,14 @@ export type PluginManifest = {
 export type LoadedPlugin = {
   manifest: PluginManifest;
   code: string;
-  source: 'builtin' | 'user';
+  source: 'user';
 };
 
-async function scanDir(root: string, source: 'builtin' | 'user'): Promise<LoadedPlugin[]> {
+export function userPluginsRoot(): string {
+  return join(app.getPath('userData'), 'plugins');
+}
+
+async function scanDir(root: string): Promise<LoadedPlugin[]> {
   const result: LoadedPlugin[] = [];
   let entries: string[] = [];
   try {
@@ -33,7 +37,7 @@ async function scanDir(root: string, source: 'builtin' | 'user'): Promise<Loaded
       const manifest = JSON.parse(manifestRaw) as PluginManifest;
       const entryPath = join(pluginDir, manifest.entry);
       const code = await fs.readFile(entryPath, 'utf8');
-      result.push({ manifest, code, source });
+      result.push({ manifest, code, source: 'user' });
     } catch (err) {
       console.warn('[plugin-loader] failed to load', pluginDir, err);
     }
@@ -42,14 +46,10 @@ async function scanDir(root: string, source: 'builtin' | 'user'): Promise<Loaded
 }
 
 export async function loadAllPlugins(): Promise<LoadedPlugin[]> {
-  const builtinRoot = app.isPackaged
-    ? join(process.resourcesPath, 'plugins')
-    : join(__dirname, '../../src/plugins/builtin');
-  const userRoot = join(app.getPath('userData'), 'plugins');
-
-  const [builtin, user] = await Promise.all([
-    scanDir(builtinRoot, 'builtin'),
-    scanDir(userRoot, 'user'),
-  ]);
-  return [...builtin, ...user];
+  const root = userPluginsRoot();
+  // Ensure the folder exists so users see it immediately on first launch.
+  await fs.mkdir(root, { recursive: true }).catch((err) => {
+    console.warn('[plugin-loader] failed to ensure plugins dir', err);
+  });
+  return scanDir(root);
 }

@@ -13,6 +13,7 @@ export function VideoPreview() {
   const videoHeight = usePlayerStore((s) => s.videoHeight);
   const currentFrame = usePlayerStore((s) => s.currentFrame);
   const overlays = usePluginStore((s) => s.overlays);
+  const overlayRevision = usePluginStore((s) => s.overlayRevision);
 
   useFrameAccuratePlayback(videoRef, fileUrl);
 
@@ -68,7 +69,7 @@ export function VideoPreview() {
       }
     }
     ctx.restore();
-  }, [currentFrame, overlays]);
+  }, [currentFrame, overlays, overlayRevision]);
 
   return (
     <div
