@@ -37,3 +37,8 @@ export const displayFrameToTime = (
 
 export const clamp = (n: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, n));
+
+// Convert an absolute (0-indexed) frame to its 1-indexed display label.
+// `startFrame` is the clip start when clipped, 0 otherwise.
+export const displayFrameLabel = (absFrame: number, startFrame: number): number =>
+  absFrame - startFrame + 1;

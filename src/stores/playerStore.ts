@@ -23,6 +23,10 @@ type PlayerState = {
   outFrame: number | null;  // display-domain
   isClipped: boolean;
 
+  // Audio
+  volume: number;           // 0..1
+  muted: boolean;
+
   // Timeline view
   timelineZoom: number;     // 1 = whole range visible
   timelinePanFrame: number; // left edge frame
@@ -50,6 +54,9 @@ type Actions = {
   setOutFrame: (frame: number | null) => void;
   applyClip: () => void;
   undoClip: () => void;
+  setVolume: (v: number) => void;
+  setMuted: (m: boolean) => void;
+  toggleMute: () => void;
   setTimelineZoom: (zoom: number) => void;
   setTimelinePan: (panFrame: number) => void;
 };
@@ -71,6 +78,8 @@ const initialState: PlayerState = {
   inFrame: null,
   outFrame: null,
   isClipped: false,
+  volume: 1,
+  muted: false,
   timelineZoom: 1,
   timelinePanFrame: 0,
 };
@@ -189,6 +198,10 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     if (!get().isClipped) return;
     set({ isClipped: false });
   },
+
+  setVolume: (v) => set({ volume: clamp(v, 0, 1) }),
+  setMuted: (m) => set({ muted: m }),
+  toggleMute: () => set({ muted: !get().muted }),
 
   setTimelineZoom: (zoom) => set({ timelineZoom: clamp(zoom, 1, 20) }),
   setTimelinePan: (panFrame) => set({ timelinePanFrame: Math.max(0, panFrame) }),

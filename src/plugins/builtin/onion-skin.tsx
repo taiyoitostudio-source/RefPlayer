@@ -47,6 +47,9 @@ export function registerOnionSkin(api: PluginAPI) {
 
   api.registerOverlay((ctx) => {
     if (!shared.settings.enabled) return;
+    // Skip during playback: onion-skin seeks per-frame in hidden videos and
+    // can't keep up at real-time playback speed, leaving stale frames.
+    if (usePlayerStore.getState().isPlaying) return;
 
     const w = ctx.canvas.width / (window.devicePixelRatio || 1);
     const h = ctx.canvas.height / (window.devicePixelRatio || 1);
@@ -115,6 +118,14 @@ function OnionPanel({ api }: { api: PluginAPI }) {
   const currentFrame = usePlayerStore((s2) => s2.currentFrame);
   const sourceFps = usePlayerStore((s2) => s2.sourceFps);
   const displayFps = usePlayerStore((s2) => s2.displayFps);
+  const isPlaying = usePlayerStore((s2) => s2.isPlaying);
+
+  // Trigger redraw when playback state flips so the overlay paints/clears
+  // immediately on pause/resume (it early-returns while playing).
+  useEffect(() => {
+    api.requestRedraw();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying]);
 
   const prevRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const nextRefs = useRef<(HTMLVideoElement | null)[]>([]);

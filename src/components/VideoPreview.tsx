@@ -12,10 +12,20 @@ export function VideoPreview() {
   const videoWidth = usePlayerStore((s) => s.videoWidth);
   const videoHeight = usePlayerStore((s) => s.videoHeight);
   const currentFrame = usePlayerStore((s) => s.currentFrame);
+  const volume = usePlayerStore((s) => s.volume);
+  const muted = usePlayerStore((s) => s.muted);
   const overlays = usePluginStore((s) => s.overlays);
   const overlayRevision = usePluginStore((s) => s.overlayRevision);
 
   useFrameAccuratePlayback(videoRef, fileUrl);
+
+  // Sync volume/muted from store to the video element
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.volume = volume;
+    v.muted = muted;
+  }, [volume, muted, fileUrl]);
 
   // Resize overlay canvas to match video display area
   useEffect(() => {
@@ -25,19 +35,35 @@ export function VideoPreview() {
     if (!canvas || !video || !container) return;
 
     const sync = () => {
-      const r = video.getBoundingClientRect();
       const cr = container.getBoundingClientRect();
-      canvas.style.left = `${r.left - cr.left}px`;
-      canvas.style.top = `${r.top - cr.top}px`;
-      canvas.style.width = `${r.width}px`;
-      canvas.style.height = `${r.height}px`;
+      const vw = video.videoWidth || videoWidth;
+      const vh = video.videoHeight || videoHeight;
+      if (!vw || !vh || cr.width === 0 || cr.height === 0) return;
+
+      const containerAspect = cr.width / cr.height;
+      const videoAspect = vw / vh;
+      let dispW: number;
+      let dispH: number;
+      if (videoAspect > containerAspect) {
+        dispW = cr.width;
+        dispH = cr.width / videoAspect;
+      } else {
+        dispH = cr.height;
+        dispW = cr.height * videoAspect;
+      }
+      const left = (cr.width - dispW) / 2;
+      const top = (cr.height - dispH) / 2;
+
+      canvas.style.left = `${left}px`;
+      canvas.style.top = `${top}px`;
+      canvas.style.width = `${dispW}px`;
+      canvas.style.height = `${dispH}px`;
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.round(r.width * dpr);
-      canvas.height = Math.round(r.height * dpr);
+      canvas.width = Math.round(dispW * dpr);
+      canvas.height = Math.round(dispH * dpr);
     };
     sync();
     const ro = new ResizeObserver(sync);
-    ro.observe(video);
     ro.observe(container);
     return () => ro.disconnect();
   }, [fileUrl, videoWidth, videoHeight]);
@@ -91,13 +117,12 @@ export function VideoPreview() {
             ref={videoRef}
             src={fileUrl}
             style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
+              width: '100%',
+              height: '100%',
               objectFit: 'contain',
               display: 'block',
             }}
             preload="auto"
-            muted
           />
           <canvas
             ref={overlayRef}

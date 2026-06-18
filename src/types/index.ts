@@ -16,6 +16,8 @@ export type Settings = {
   shortcuts: Record<ActionId, KeyCombo>;
   lastDisplayFps: number;
   repeat: boolean;
+  lastVolume: number;
+  muted: boolean;
   windowBounds: { x?: number; y?: number; width: number; height: number };
   ffmpegPath: string | null;
   sidebarOpen: boolean;

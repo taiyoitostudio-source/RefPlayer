@@ -24,6 +24,8 @@ export function App() {
       const p = usePlayerStore.getState();
       if (s.lastDisplayFps > 0) p.setDisplayFps(s.lastDisplayFps);
       p.setRepeat(s.repeat);
+      p.setVolume(s.lastVolume ?? 1);
+      p.setMuted(s.muted ?? false);
 
       initPluginHost();
       await loadUserPlugins();

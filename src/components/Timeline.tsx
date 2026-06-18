@@ -91,14 +91,21 @@ export function Timeline() {
         }
       }
 
-      const firstTick = Math.floor(viewStart / tickStep) * tickStep;
+      // Iterate ticks in 1-indexed display domain (1 = first frame of the
+      // active range, whether clipped or not). x positioning still uses the
+      // absolute frame so playhead / IN-OUT markers stay aligned.
+      const viewStartDisp = viewStart - start + 1;
+      const viewEndDisp = viewEnd - start + 1;
+      const firstDispTick = Math.max(1, Math.ceil(viewStartDisp / tickStep) * tickStep);
+
       ctx.fillStyle = '#6B5B7D';
       ctx.font = '10px DM Mono';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
 
-      for (let f = firstTick; f <= viewEnd; f += tickStep) {
-        const x = frameToX(f);
+      for (let df = firstDispTick; df <= viewEndDisp; df += tickStep) {
+        const absF = df + start - 1;
+        const x = frameToX(absF);
         if (x < -20 || x > w + 20) continue;
         // Major tick
         ctx.strokeStyle = '#C9BFD7';
@@ -106,15 +113,15 @@ export function Timeline() {
         ctx.moveTo(x + 0.5, HEADER_H);
         ctx.lineTo(x + 0.5, h);
         ctx.stroke();
-        // Label
+        // Label (display value)
         ctx.fillStyle = '#6B5B7D';
-        ctx.fillText(String(f), x + 3, HEADER_H / 2);
+        ctx.fillText(String(df), x + 3, HEADER_H / 2);
 
         // Minor ticks
         const minorCount = 4;
         ctx.strokeStyle = '#E7E1EE';
         for (let k = 1; k < minorCount; k++) {
-          const mf = f + (k * tickStep) / minorCount;
+          const mf = absF + (k * tickStep) / minorCount;
           const mx = frameToX(mf);
           ctx.beginPath();
           ctx.moveTo(mx + 0.5, h - 10);

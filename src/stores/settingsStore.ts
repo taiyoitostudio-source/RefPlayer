@@ -18,6 +18,8 @@ const DEFAULTS: Settings = {
   shortcuts: DEFAULT_SHORTCUTS,
   lastDisplayFps: 12,
   repeat: false,
+  lastVolume: 1,
+  muted: false,
   windowBounds: { width: 1280, height: 800 },
   ffmpegPath: null,
   sidebarOpen: true,
