@@ -1,4 +1,5 @@
 import { FpsSelector } from './FpsSelector';
+import { SpeedSelector } from './SpeedSelector';
 import { TransportButtons } from './TransportButtons';
 import { InOutButtons } from './InOutButtons';
 import { RepeatToggle } from './RepeatToggle';
@@ -17,8 +18,9 @@ export function Controls() {
         gap: 18,
       }}
     >
-      <div className="flex items-center" style={{ flex: '0 1 auto' }}>
+      <div className="flex items-center" style={{ flex: '0 1 auto', gap: 8 }}>
         <FpsSelector />
+        <SpeedSelector />
       </div>
 
       <div className="flex items-center" style={{ gap: 14 }}>

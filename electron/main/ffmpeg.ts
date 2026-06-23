@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import ffmpegStatic from 'ffmpeg-static';
 import ffprobeStatic from 'ffprobe-static';
 import { app } from 'electron';
@@ -82,6 +82,8 @@ export async function probeVideo(filePath: string): Promise<VideoMeta> {
   };
 }
 
+export type ExportQuality = 'low' | 'medium' | 'high';
+
 export type ExportOpts = {
   inputPath: string;
   outputPath: string;
@@ -90,6 +92,7 @@ export type ExportOpts = {
   targetFps: number;
   sourceFps: number;
   isClipped: boolean;
+  quality?: ExportQuality;
   onProgress?: (percent: number) => void;
 };
 
@@ -120,18 +123,39 @@ async function detectH264Encoder(): Promise<H264Encoder> {
   return cachedEncoderPromise;
 }
 
-function buildVideoEncoderArgs(encoder: H264Encoder): string[] {
+// Per-encoder quality value tables. Lower = higher quality / bigger file.
+const QUALITY_TABLE: Record<ExportQuality, { crf: string; cq: string; qi: string; qp: string }> = {
+  low:    { crf: '28', cq: '28', qi: '27', qp: '29' },
+  medium: { crf: '23', cq: '23', qi: '22', qp: '24' },
+  high:   { crf: '18', cq: '18', qi: '17', qp: '19' },
+};
+
+function buildVideoEncoderArgs(encoder: H264Encoder, quality: ExportQuality = 'medium'): string[] {
+  const q = QUALITY_TABLE[quality];
   switch (encoder) {
     case 'h264_nvenc':
-      return ['-c:v', 'h264_nvenc', '-preset', 'p4', '-tune', 'hq', '-rc', 'vbr', '-cq', '23', '-b:v', '0'];
+      return ['-c:v', 'h264_nvenc', '-preset', 'p4', '-tune', 'hq', '-rc', 'vbr', '-cq', q.cq, '-b:v', '0'];
     case 'h264_qsv':
-      return ['-c:v', 'h264_qsv', '-preset', 'medium', '-global_quality', '23'];
+      return ['-c:v', 'h264_qsv', '-preset', 'medium', '-global_quality', q.cq];
     case 'h264_amf':
-      return ['-c:v', 'h264_amf', '-quality', 'balanced', '-rc', 'cqp', '-qp_i', '22', '-qp_p', '24'];
+      return ['-c:v', 'h264_amf', '-quality', 'balanced', '-rc', 'cqp', '-qp_i', q.qi, '-qp_p', q.qp];
     case 'libx264':
     default:
-      return ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23'];
+      return ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', q.crf];
   }
+}
+
+// Track the currently-running ffmpeg encode so the renderer can cancel it.
+let activeExportChild: ChildProcess | null = null;
+
+export function cancelExport(): boolean {
+  const child = activeExportChild;
+  if (!child) return false;
+  // SIGTERM lets ffmpeg flush before exiting; on Windows this maps to a
+  // forced termination, which is fine — the partial output file is discarded
+  // by the caller.
+  child.kill('SIGTERM');
+  return true;
 }
 
 function runFfmpegEncode(
@@ -141,6 +165,7 @@ function runFfmpegEncode(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(ffmpegPath(), args, { windowsHide: true });
+    activeExportChild = child;
     let stderr = '';
     let buf = '';
     child.stdout.on('data', (chunk: Buffer) => {
@@ -158,16 +183,25 @@ function runFfmpegEncode(
       }
     });
     child.stderr.on('data', (d) => { stderr += d.toString('utf8'); });
-    child.on('error', reject);
-    child.on('close', (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`ffmpeg exited with code ${code}\n${stderr.slice(-2000)}`));
+    child.on('error', (err) => {
+      if (activeExportChild === child) activeExportChild = null;
+      reject(err);
+    });
+    child.on('close', (code, signal) => {
+      if (activeExportChild === child) activeExportChild = null;
+      if (signal === 'SIGTERM' || signal === 'SIGKILL') {
+        reject(new Error('CANCELED'));
+      } else if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`ffmpeg exited with code ${code}\n${stderr.slice(-2000)}`));
+      }
     });
   });
 }
 
 function buildArgs(opts: ExportOpts, encoder: H264Encoder | null): string[] {
-  const { inputPath, outputPath, startSec, endSec, targetFps, isClipped } = opts;
+  const { inputPath, outputPath, startSec, endSec, targetFps, isClipped, quality } = opts;
   const args: string[] = ['-y'];
 
   // Input -ss does a fast seek (keyframe-snap, then -accurate_seek decodes &
@@ -192,7 +226,7 @@ function buildArgs(opts: ExportOpts, encoder: H264Encoder | null): string[] {
     args.push('-c', 'copy');
   } else {
     args.push('-r', targetFps.toString());
-    args.push(...buildVideoEncoderArgs(encoder));
+    args.push(...buildVideoEncoderArgs(encoder, quality ?? 'medium'));
     args.push('-c:a', 'aac', '-ac', '2');
   }
   args.push('-progress', 'pipe:1', '-nostats');

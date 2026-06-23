@@ -12,7 +12,10 @@ export type ActionId =
   | 'toggleRepeat' | 'openSettings'
   | 'zoomTimelineIn' | 'zoomTimelineOut'
   | 'volumeUp' | 'volumeDown' | 'muteToggle'
-  | 'clearIn' | 'clearOut';
+  | 'clearIn' | 'clearOut'
+  | 'toggleFullscreen' | 'saveFrame';
+
+export type ExportQuality = 'low' | 'medium' | 'high';
 
 export type Settings = {
   shortcuts: Record<ActionId, KeyCombo>;
@@ -20,6 +23,7 @@ export type Settings = {
   repeat: boolean;
   lastVolume: number;
   muted: boolean;
+  exportQuality: ExportQuality;
   windowBounds: { x?: number; y?: number; width: number; height: number };
   ffmpegPath: string | null;
   sidebarOpen: boolean;
@@ -62,6 +66,7 @@ declare global {
         targetFps: number;
         sourceFps: number;
         isClipped: boolean;
+        quality?: ExportQuality;
       }) => Promise<boolean>;
       onExportProgress: (cb: (pct: number) => void) => () => void;
       getSettings: () => Promise<Settings>;
@@ -77,9 +82,15 @@ declare global {
         toggleMaximize: () => Promise<void>;
         close: () => Promise<void>;
         isMaximized: () => Promise<boolean>;
+        setFullscreen: (on: boolean) => Promise<void>;
         onMaximizedChange: (cb: (maximized: boolean) => void) => () => void;
         onFocusChange: (cb: (focused: boolean) => void) => () => void;
       };
+      cancelExport: () => Promise<boolean>;
+      savePngDialog: (defaultName: string) => Promise<string | null>;
+      writePngFile: (path: string, data: Uint8Array) => Promise<void>;
+      getAppVersion: () => Promise<string>;
+      getFilePath: (file: File) => string | null;
       pathToFileURL: (path: string) => string;
     };
   }

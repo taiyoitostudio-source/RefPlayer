@@ -17,6 +17,8 @@ const DEFAULT_SHORTCUTS: Record<ActionId, KeyCombo> = {
   muteToggle:       { key: 'm' },
   clearIn:          { key: '[', shift: true },
   clearOut:         { key: ']', shift: true },
+  toggleFullscreen: { key: 'F11' },
+  saveFrame:        { key: 's', ctrl: true },
 };
 
 const DEFAULTS: Settings = {
@@ -25,6 +27,7 @@ const DEFAULTS: Settings = {
   repeat: false,
   lastVolume: 1,
   muted: false,
+  exportQuality: 'medium',
   windowBounds: { width: 1280, height: 800 },
   ffmpegPath: null,
   sidebarOpen: true,

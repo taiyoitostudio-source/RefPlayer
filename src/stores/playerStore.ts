@@ -27,6 +27,16 @@ type PlayerState = {
   volume: number;           // 0..1
   muted: boolean;
 
+  // Playback
+  playbackRate: number;     // 1 = normal, 0.5 = half, 2 = double
+
+  // Fullscreen (video-only mode)
+  fullscreen: boolean;
+
+  // Direct video element reference for callers that need to grab the current
+  // frame (e.g. PNG export). Mutated by VideoPreview on mount/unmount.
+  videoElement: HTMLVideoElement | null;
+
   // Timeline view
   timelineZoom: number;     // 1 = whole range visible
   timelinePanFrame: number; // left edge frame
@@ -59,6 +69,10 @@ type Actions = {
   setVolume: (v: number) => void;
   setMuted: (m: boolean) => void;
   toggleMute: () => void;
+  setPlaybackRate: (r: number) => void;
+  setFullscreen: (b: boolean) => void;
+  toggleFullscreen: () => void;
+  setVideoElement: (el: HTMLVideoElement | null) => void;
   setTimelineZoom: (zoom: number) => void;
   setTimelinePan: (panFrame: number) => void;
 };
@@ -82,6 +96,9 @@ const initialState: PlayerState = {
   isClipped: false,
   volume: 1,
   muted: false,
+  playbackRate: 1,
+  fullscreen: false,
+  videoElement: null,
   timelineZoom: 1,
   timelinePanFrame: 0,
 };
@@ -212,6 +229,10 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   setVolume: (v) => set({ volume: clamp(v, 0, 1) }),
   setMuted: (m) => set({ muted: m }),
   toggleMute: () => set({ muted: !get().muted }),
+  setPlaybackRate: (r) => set({ playbackRate: clamp(r, 0.1, 4) }),
+  setFullscreen: (b) => set({ fullscreen: b }),
+  toggleFullscreen: () => set({ fullscreen: !get().fullscreen }),
+  setVideoElement: (el) => set({ videoElement: el }),
 
   setTimelineZoom: (zoom) => set({ timelineZoom: clamp(zoom, 1, 20) }),
   setTimelinePan: (panFrame) => set({ timelinePanFrame: Math.max(0, panFrame) }),

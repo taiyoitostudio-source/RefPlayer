@@ -16,12 +16,14 @@ import { openVideoFile } from './lib/openVideoFile';
 export function App() {
   useShortcuts();
 
+  const filePath = usePlayerStore((s) => s.filePath);
+  const fullscreen = usePlayerStore((s) => s.fullscreen);
+
   // Load settings & apply persisted values on startup
   useEffect(() => {
     (async () => {
       await useSettingsStore.getState().load();
       const s = useSettingsStore.getState();
-      // Apply persisted FPS/repeat to player
       const p = usePlayerStore.getState();
       if (s.lastDisplayFps > 0) p.setDisplayFps(s.lastDisplayFps);
       p.setRepeat(s.repeat);
@@ -31,8 +33,6 @@ export function App() {
       initPluginHost();
       await loadUserPlugins();
 
-      // If the app was launched with a file path (Open with / double-click),
-      // load it now that all stores and plugins are ready.
       try {
         const pending = await window.refplayer.getPendingOpenFile();
         if (pending) await openVideoFile(pending);
@@ -45,20 +45,49 @@ export function App() {
       useSettingsStore.getState().receiveExternal(s);
     });
 
-    // While the app is already running, "Open with" routes through here.
     const offOpenFile = window.refplayer.onOpenFile((path) => {
       void openVideoFile(path);
     });
 
+    // ESC to leave fullscreen
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && usePlayerStore.getState().fullscreen) {
+        const p = usePlayerStore.getState();
+        p.setFullscreen(false);
+        void window.refplayer.windowControls.setFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+
     return () => {
       offSettings();
       offOpenFile();
+      window.removeEventListener('keydown', onKey);
     };
   }, []);
+
+  // Drag & drop a video file onto the window to open it.
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+  };
+  const onDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    const path = window.refplayer.getFilePath(file);
+    if (!path) return;
+    await openVideoFile(path);
+  };
+
+  const fileName = filePath ? filePath.split(/[\\/]/).pop() : null;
+  const titleText = fileName ? `${fileName} — RefPlayer` : 'RefPlayer';
 
   return (
     <ToastHost>
       <div
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         style={{
           height: '100vh',
           width: '100vw',
@@ -68,14 +97,14 @@ export function App() {
           overflow: 'hidden',
         }}
       >
-        <TitleBar title="RefPlayer" />
-        <TopBar />
+        {!fullscreen && <TitleBar title={titleText} />}
+        {!fullscreen && <TopBar />}
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
           <VideoPreview />
-          <PluginSidebar />
+          {!fullscreen && <PluginSidebar />}
         </div>
-        <Timeline />
-        <Controls />
+        {!fullscreen && <Timeline />}
+        {!fullscreen && <Controls />}
       </div>
     </ToastHost>
   );

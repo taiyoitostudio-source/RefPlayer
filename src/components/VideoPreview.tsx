@@ -14,18 +14,29 @@ export function VideoPreview() {
   const currentFrame = usePlayerStore((s) => s.currentFrame);
   const volume = usePlayerStore((s) => s.volume);
   const muted = usePlayerStore((s) => s.muted);
+  const playbackRate = usePlayerStore((s) => s.playbackRate);
   const overlays = usePluginStore((s) => s.overlays);
   const overlayRevision = usePluginStore((s) => s.overlayRevision);
 
   useFrameAccuratePlayback(videoRef, fileUrl);
 
-  // Sync volume/muted from store to the video element
+  // Register the video element in the player store so other parts of the app
+  // (e.g. "save current frame as PNG") can grab the live element.
+  useEffect(() => {
+    usePlayerStore.getState().setVideoElement(videoRef.current);
+    return () => usePlayerStore.getState().setVideoElement(null);
+  }, [fileUrl]);
+
+  // Sync volume/muted/playbackRate from store to the video element
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     v.volume = volume;
     v.muted = muted;
-  }, [volume, muted, fileUrl]);
+    v.playbackRate = playbackRate;
+    // Maintain audio pitch when playbackRate != 1
+    (v as HTMLVideoElement & { preservesPitch?: boolean }).preservesPitch = true;
+  }, [volume, muted, playbackRate, fileUrl]);
 
   // Resize overlay canvas to match video display area
   useEffect(() => {
@@ -61,11 +72,22 @@ export function VideoPreview() {
       const dpr = window.devicePixelRatio || 1;
       canvas.width = Math.round(dispW * dpr);
       canvas.height = Math.round(dispH * dpr);
+
+      // Setting canvas.width clears the bitmap, so plugin overlays (onion-skin
+      // etc.) must redraw. Request a redraw via the plugin store.
+      usePluginStore.getState().bumpOverlayRevision();
     };
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(container);
-    return () => ro.disconnect();
+    // Also listen for window resize to catch device-pixel-ratio changes (e.g.
+    // moving between monitors with different DPI scaling) that may not change
+    // the container box but still invalidate the canvas bitmap.
+    window.addEventListener('resize', sync);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', sync);
+    };
   }, [fileUrl, videoWidth, videoHeight]);
 
   // Re-render overlays on frame change or overlay set change

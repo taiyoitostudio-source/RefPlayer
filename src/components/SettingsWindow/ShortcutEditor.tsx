@@ -19,6 +19,8 @@ const LABELS: Record<ActionId, string> = {
   muteToggle:       'ミュート切替',
   clearIn:          'IN点を解除',
   clearOut:         'OUT点を解除',
+  toggleFullscreen: 'フルスクリーン切替',
+  saveFrame:        '現在のフレームを保存',
 };
 
 const ORDER: ActionId[] = [
@@ -27,6 +29,7 @@ const ORDER: ActionId[] = [
   'toggleRepeat', 'openSettings',
   'zoomTimelineIn', 'zoomTimelineOut',
   'volumeUp', 'volumeDown', 'muteToggle',
+  'toggleFullscreen', 'saveFrame',
 ];
 
 export function ShortcutEditor() {

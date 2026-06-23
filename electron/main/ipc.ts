@@ -1,6 +1,6 @@
-import { ipcMain, dialog, BrowserWindow, shell } from 'electron';
+import { ipcMain, dialog, BrowserWindow, shell, app } from 'electron';
 import { promises as fs } from 'node:fs';
-import { probeVideo, exportMp4 } from './ffmpeg';
+import { probeVideo, exportMp4, cancelExport } from './ffmpeg';
 import { settingsManager, type SettingsSchema } from './settings';
 import { loadAllPlugins, userPluginsRoot } from './plugin-loader';
 import { openSettingsWindow, getMainWindow, consumePendingOpenFile } from './index';
@@ -88,4 +88,25 @@ export function registerIpcHandlers() {
   ipcMain.handle('window:isMaximized', (e) => {
     return BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false;
   });
+  ipcMain.handle('window:setFullscreen', (e, on: boolean) => {
+    BrowserWindow.fromWebContents(e.sender)?.setFullScreen(on);
+  });
+
+  ipcMain.handle('video:cancelExport', () => cancelExport());
+
+  ipcMain.handle('dialog:savePng', async (_e, defaultName: string) => {
+    const win = getMainWindow() ?? undefined;
+    const result = await dialog.showSaveDialog(win!, {
+      defaultPath: defaultName,
+      filters: [{ name: 'PNG Image', extensions: ['png'] }],
+    });
+    if (result.canceled || !result.filePath) return null;
+    return result.filePath;
+  });
+
+  ipcMain.handle('image:writePng', async (_e, path: string, data: Uint8Array) => {
+    await fs.writeFile(path, Buffer.from(data));
+  });
+
+  ipcMain.handle('app:getVersion', () => app.getVersion());
 }

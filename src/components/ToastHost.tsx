@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { AnimatePresence, motion } from 'framer-motion';
 
 export type ToastMsg =
-  | { kind: 'progress'; message: string; percent: number }
+  | { kind: 'progress'; message: string; percent: number; onCancel?: () => void }
   | { kind: 'success'; message: string }
   | { kind: 'error'; message: string }
   | { kind: 'info'; message: string };
@@ -86,6 +86,14 @@ function ToastView({ msg, onClose }: { msg: ToastMsg | null; onClose: () => void
               </div>
             )}
           </div>
+          {msg.kind === 'progress' && msg.onCancel && (
+            <button
+              onClick={() => msg.onCancel?.()}
+              style={{ fontSize: 11, padding: '3px 10px' }}
+            >
+              キャンセル
+            </button>
+          )}
           {msg.kind !== 'progress' && (
             <button
               onClick={onClose}

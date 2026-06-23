@@ -1,6 +1,8 @@
 import { usePlayerStore } from '@/stores/playerStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { openVideoFile } from '@/lib/openVideoFile';
+import { saveCurrentFrame } from '@/lib/saveCurrentFrame';
+import { displayFrameLabel } from '@/utils/frameMath';
 import { useExportToast } from './ToastHost';
 
 export function TopBar() {
@@ -31,9 +33,12 @@ export function TopBar() {
     const startSec = (startFrame / s.displayFps);
     const endSec = ((endFrame + 1) / s.displayFps);
 
-    showToast({ kind: 'progress', message: '書き出し中…', percent: 0 });
+    const exportQuality = useSettingsStore.getState().exportQuality;
+    const onCancel = () => { void window.refplayer.cancelExport(); };
+
+    showToast({ kind: 'progress', message: '書き出し中…', percent: 0, onCancel });
     const off = window.refplayer.onExportProgress((pct) => {
-      showToast({ kind: 'progress', message: '書き出し中…', percent: pct });
+      showToast({ kind: 'progress', message: '書き出し中…', percent: pct, onCancel });
     });
     try {
       await window.refplayer.exportMp4({
@@ -44,12 +49,31 @@ export function TopBar() {
         targetFps: s.displayFps,
         sourceFps: s.sourceFps,
         isClipped: s.isClipped,
+        quality: exportQuality,
       });
       showToast({ kind: 'success', message: '書き出し完了' });
     } catch (err) {
-      showToast({ kind: 'error', message: `書き出し失敗: ${(err as Error).message}` });
+      const msg = (err as Error).message;
+      if (msg === 'CANCELED' || msg.includes('CANCELED')) {
+        showToast({ kind: 'info', message: '書き出しをキャンセルしました' });
+      } else {
+        showToast({ kind: 'error', message: `書き出し失敗: ${msg}` });
+      }
     } finally {
       off();
+    }
+  };
+
+  const onSaveFrame = async () => {
+    const s = usePlayerStore.getState();
+    if (!s.videoElement || !s.filePath) return;
+    const startFrame = s.isClipped && s.inFrame != null ? s.inFrame : 0;
+    const displayNum = displayFrameLabel(s.currentFrame, startFrame);
+    try {
+      const saved = await saveCurrentFrame(s.videoElement, s.filePath, displayNum);
+      if (saved) showToast({ kind: 'success', message: 'フレームを保存しました' });
+    } catch (err) {
+      showToast({ kind: 'error', message: `保存失敗: ${(err as Error).message}` });
     }
   };
 
@@ -75,6 +99,14 @@ export function TopBar() {
 
 
       <div className="flex items-center gap-2">
+        <button
+          className="btn-icon"
+          onClick={onSaveFrame}
+          disabled={!filePath}
+          title="現在のフレームをPNGで保存 (Ctrl+S)"
+        >
+          <CameraIcon />
+        </button>
         <button
           className={`btn-icon${sidebarOpen ? ' active' : ''}`}
           onClick={toggleSidebar}
@@ -102,6 +134,14 @@ function DownloadIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
+    </svg>
+  );
+}
+function CameraIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
+      <path d="M4 7h3l2-2h6l2 2h3v12H4z" />
+      <circle cx="12" cy="13" r="3.5" />
     </svg>
   );
 }

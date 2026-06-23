@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { usePlayerStore } from '@/stores/playerStore';
+import { saveCurrentFrame } from '@/lib/saveCurrentFrame';
+import { displayFrameLabel } from '@/utils/frameMath';
 import type { ActionId, KeyCombo } from '@/types';
 
 // Pairs of unshifted ↔ shifted characters on a US/JIS keyboard layout.
@@ -98,6 +100,21 @@ const ACTIONS: Record<ActionId, () => void> = {
   },
   clearIn: () => usePlayerStore.getState().clearInPoint(),
   clearOut: () => usePlayerStore.getState().clearOutPoint(),
+  toggleFullscreen: () => {
+    const p = usePlayerStore.getState();
+    const next = !p.fullscreen;
+    p.setFullscreen(next);
+    void window.refplayer.windowControls.setFullscreen(next);
+  },
+  saveFrame: () => {
+    const p = usePlayerStore.getState();
+    if (!p.videoElement || !p.filePath) return;
+    const startFrame = p.isClipped && p.inFrame != null ? p.inFrame : 0;
+    const displayNum = displayFrameLabel(p.currentFrame, startFrame);
+    void saveCurrentFrame(p.videoElement, p.filePath, displayNum).catch((err) => {
+      console.error('[saveFrame]', err);
+    });
+  },
 };
 
 export function useShortcuts() {

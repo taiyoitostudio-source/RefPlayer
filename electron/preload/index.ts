@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 const api = {
   openVideoDialog: () => ipcRenderer.invoke('dialog:openVideo') as Promise<string | null>,
@@ -67,6 +67,7 @@ const api = {
     toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize') as Promise<void>,
     close: () => ipcRenderer.invoke('window:close') as Promise<void>,
     isMaximized: () => ipcRenderer.invoke('window:isMaximized') as Promise<boolean>,
+    setFullscreen: (on: boolean) => ipcRenderer.invoke('window:setFullscreen', on) as Promise<void>,
     onMaximizedChange: (cb: (maximized: boolean) => void) => {
       const l = (_: unknown, m: boolean) => cb(m);
       ipcRenderer.on('window:stateChanged', l);
@@ -78,10 +79,27 @@ const api = {
       return () => ipcRenderer.removeListener('window:focusChanged', l);
     },
   },
+
+  cancelExport: () => ipcRenderer.invoke('video:cancelExport') as Promise<boolean>,
+  savePngDialog: (defaultName: string) =>
+    ipcRenderer.invoke('dialog:savePng', defaultName) as Promise<string | null>,
+  writePngFile: (path: string, data: Uint8Array) =>
+    ipcRenderer.invoke('image:writePng', path, data) as Promise<void>,
+  getAppVersion: () => ipcRenderer.invoke('app:getVersion') as Promise<string>,
   onOpenFile: (cb: (path: string) => void) => {
     const listener = (_: unknown, path: string) => cb(path);
     ipcRenderer.on('app:openFile', listener);
     return () => ipcRenderer.removeListener('app:openFile', listener);
+  },
+
+  // Electron 32+ removed File.path for security. Use webUtils.getPathForFile
+  // which is the supported way to recover a drag-and-dropped file's path.
+  getFilePath: (file: File) => {
+    try {
+      return webUtils.getPathForFile(file);
+    } catch {
+      return null;
+    }
   },
 
   pathToFileURL: (path: string) => {
