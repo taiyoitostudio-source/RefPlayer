@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: セキュリティ問題の報告
+    url: https://github.com/taiyoitostudio-source/RefPlayer/security/advisories/new
+    about: 脆弱性は公開Issueではなく Security Advisory から非公開で報告してください
