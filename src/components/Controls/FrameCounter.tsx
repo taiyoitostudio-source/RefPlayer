@@ -31,20 +31,11 @@ export function FrameCounter() {
       className="text-mono flex items-baseline gap-1"
       style={{ minWidth: 90, justifyContent: 'flex-end' }}
     >
-      <span
-        style={{
-          fontSize: 18,
-          fontWeight: 600,
-          background: 'var(--gradient-accent)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-        }}
-      >
+      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
         {displayCurrent}
       </span>
-      <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>/</span>
-      <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{displayTotal}</span>
+      <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>/</span>
+      <span style={{ color: 'var(--text-primary)', fontSize: 11 }}>{displayTotal}</span>
     </div>
   );
 }

@@ -14,13 +14,19 @@ const LABELS: Record<ActionId, string> = {
   openSettings:     '設定を開く',
   zoomTimelineIn:   'タイムラインをズームイン',
   zoomTimelineOut:  'タイムラインをズームアウト',
+  volumeUp:         '音量を上げる',
+  volumeDown:       '音量を下げる',
+  muteToggle:       'ミュート切替',
+  clearIn:          'IN点を解除',
+  clearOut:         'OUT点を解除',
 };
 
 const ORDER: ActionId[] = [
   'playPause', 'stepBack', 'stepForward',
-  'setIn', 'setOut', 'applyClipToggle',
+  'setIn', 'setOut', 'clearIn', 'clearOut', 'applyClipToggle',
   'toggleRepeat', 'openSettings',
   'zoomTimelineIn', 'zoomTimelineOut',
+  'volumeUp', 'volumeDown', 'muteToggle',
 ];
 
 export function ShortcutEditor() {

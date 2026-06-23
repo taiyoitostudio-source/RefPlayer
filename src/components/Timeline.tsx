@@ -46,15 +46,15 @@ export function Timeline() {
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Background
-      ctx.fillStyle = '#FAF7FC';
+      // Background — Win95 desktop gray
+      ctx.fillStyle = '#C0C0C0';
       ctx.fillRect(0, 0, w, h);
 
       const total = s.getTotalDisplayFrames();
       if (!total || !s.filePath) {
         // Empty hint
-        ctx.fillStyle = '#C9BFD7';
-        ctx.font = '11px DM Mono';
+        ctx.fillStyle = '#808080';
+        ctx.font = '11px Tahoma';
         ctx.textBaseline = 'middle';
         ctx.fillText('— タイムライン —', 12, h / 2);
         return;
@@ -72,9 +72,9 @@ export function Timeline() {
       const frameToX = (f: number) => ((f - viewStart) / visibleLen) * w;
 
       // Header strip
-      ctx.fillStyle = '#F4F1F8';
+      ctx.fillStyle = '#DFDFDF';
       ctx.fillRect(0, 0, w, HEADER_H);
-      ctx.strokeStyle = '#E7E1EE';
+      ctx.strokeStyle = '#808080';
       ctx.beginPath();
       ctx.moveTo(0, HEADER_H + 0.5);
       ctx.lineTo(w, HEADER_H + 0.5);
@@ -98,8 +98,8 @@ export function Timeline() {
       const viewEndDisp = viewEnd - start + 1;
       const firstDispTick = Math.max(1, Math.ceil(viewStartDisp / tickStep) * tickStep);
 
-      ctx.fillStyle = '#6B5B7D';
-      ctx.font = '10px DM Mono';
+      ctx.fillStyle = '#000000';
+      ctx.font = '10px Tahoma';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
 
@@ -108,18 +108,18 @@ export function Timeline() {
         const x = frameToX(absF);
         if (x < -20 || x > w + 20) continue;
         // Major tick
-        ctx.strokeStyle = '#C9BFD7';
+        ctx.strokeStyle = '#808080';
         ctx.beginPath();
         ctx.moveTo(x + 0.5, HEADER_H);
         ctx.lineTo(x + 0.5, h);
         ctx.stroke();
         // Label (display value)
-        ctx.fillStyle = '#6B5B7D';
+        ctx.fillStyle = '#000000';
         ctx.fillText(String(df), x + 3, HEADER_H / 2);
 
         // Minor ticks
         const minorCount = 4;
-        ctx.strokeStyle = '#E7E1EE';
+        ctx.strokeStyle = '#A0A0A0';
         for (let k = 1; k < minorCount; k++) {
           const mf = absF + (k * tickStep) / minorCount;
           const mx = frameToX(mf);
@@ -134,25 +134,19 @@ export function Timeline() {
       if (!s.isClipped && s.inFrame != null && s.outFrame != null && s.outFrame > s.inFrame) {
         const x1 = frameToX(s.inFrame);
         const x2 = frameToX(s.outFrame);
-        const grad = ctx.createLinearGradient(x1, 0, x2, 0);
-        grad.addColorStop(0, 'rgba(139,30,92,0.10)');
-        grad.addColorStop(1, 'rgba(75,42,138,0.10)');
-        ctx.fillStyle = grad;
+        ctx.fillStyle = 'rgba(0, 0, 128, 0.20)';
         ctx.fillRect(x1, HEADER_H, x2 - x1, h - HEADER_H);
       }
 
       // IN/OUT markers (hidden when clipped)
       if (!s.isClipped) {
-        if (s.inFrame != null) drawMarker(ctx, frameToX(s.inFrame), h, '#8B1E5C', '{');
-        if (s.outFrame != null) drawMarker(ctx, frameToX(s.outFrame), h, '#4B2A8A', '}');
+        if (s.inFrame != null) drawMarker(ctx, frameToX(s.inFrame), h, '#000000', '{');
+        if (s.outFrame != null) drawMarker(ctx, frameToX(s.outFrame), h, '#000000', '}');
       }
 
-      // Playhead
+      // Playhead — solid Win95 navy
       const phX = frameToX(s.currentFrame);
-      const phGrad = ctx.createLinearGradient(0, 0, 0, h);
-      phGrad.addColorStop(0, '#8B1E5C');
-      phGrad.addColorStop(1, '#4B2A8A');
-      ctx.strokeStyle = phGrad;
+      ctx.strokeStyle = '#000080';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(phX, 0);
@@ -161,7 +155,7 @@ export function Timeline() {
       ctx.lineWidth = 1;
 
       // Playhead handle
-      ctx.fillStyle = '#8B1E5C';
+      ctx.fillStyle = '#000080';
       ctx.beginPath();
       ctx.moveTo(phX - 6, 0);
       ctx.lineTo(phX + 6, 0);
@@ -311,7 +305,7 @@ export function Timeline() {
     >
       <canvas
         ref={canvasRef}
-        style={{ display: 'block', width: '100%', height: '100%', cursor: 'crosshair' }}
+        style={{ display: 'block', width: '100%', height: '100%', cursor: 'pointer' }}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}

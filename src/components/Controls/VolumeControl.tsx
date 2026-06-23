@@ -41,7 +41,7 @@ export function VolumeControl() {
         value={sliderValue}
         onChange={onSliderChange}
         title={`音量: ${Math.round(sliderValue * 100)}%`}
-        style={{ width: 80, accentColor: 'var(--accent-magenta)' }}
+        style={{ width: 80, accentColor: '#000080' }}
       />
     </div>
   );

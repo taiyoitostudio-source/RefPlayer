@@ -102,8 +102,8 @@ function CircleProgress({ fraction, value }: { fraction: number; value: number }
       <svg width={size} height={size}>
         <defs>
           <linearGradient id="dt-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#8B1E5C" />
-            <stop offset="100%" stopColor="#4B2A8A" />
+            <stop offset="0%" stopColor="#000080" />
+            <stop offset="100%" stopColor="#1084D0" />
           </linearGradient>
         </defs>
         <circle

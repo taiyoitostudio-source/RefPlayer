@@ -42,47 +42,45 @@ function ToastView({ msg, onClose }: { msg: ToastMsg | null; onClose: () => void
     <AnimatePresence>
       {msg && (
         <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 30, opacity: 0 }}
-          transition={{ duration: 0.18 }}
+          initial={{ y: 10 }}
+          animate={{ y: 0 }}
+          exit={{ y: 10 }}
+          transition={{ duration: 0 }}
+          className="win95-raised"
           style={{
             position: 'fixed',
             bottom: 28,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'var(--bg-panel)',
-            border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-soft)',
-            padding: '12px 18px',
-            borderRadius: 'var(--radius-lg)',
+            padding: '8px 12px',
             minWidth: 280,
             zIndex: 100,
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
+            gap: 10,
+            fontSize: 11,
           }}
         >
           <Dot kind={msg.kind} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{msg.message}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-primary)' }}>{msg.message}</div>
             {msg.kind === 'progress' && (
               <div
+                className="win95-sunken"
                 style={{
-                  marginTop: 6,
+                  marginTop: 4,
                   width: '100%',
-                  height: 4,
-                  borderRadius: 4,
-                  background: 'var(--bg-elevated)',
+                  height: 12,
+                  background: '#FFFFFF',
                   overflow: 'hidden',
+                  position: 'relative',
                 }}
               >
                 <div
                   style={{
                     width: `${msg.percent}%`,
                     height: '100%',
-                    background: 'var(--gradient-accent)',
-                    transition: 'width 200ms ease',
+                    background: '#000080',
                   }}
                 />
               </div>
@@ -92,12 +90,13 @@ function ToastView({ msg, onClose }: { msg: ToastMsg | null; onClose: () => void
             <button
               onClick={onClose}
               style={{
-                fontSize: 12,
-                color: 'var(--text-muted)',
-                padding: 4,
+                width: 18,
+                height: 16,
+                fontSize: 10,
+                padding: 0,
               }}
             >
-              ×
+              ✕
             </button>
           )}
         </motion.div>
@@ -107,20 +106,30 @@ function ToastView({ msg, onClose }: { msg: ToastMsg | null; onClose: () => void
 }
 
 function Dot({ kind }: { kind: ToastMsg['kind'] }) {
-  const color =
-    kind === 'success' ? '#4B2A8A'
-    : kind === 'error' ? '#B82B5F'
-    : kind === 'progress' ? '#8B1E5C'
-    : '#7C5BBE';
+  const glyph =
+    kind === 'success' ? '✓'
+    : kind === 'error' ? '✕'
+    : kind === 'progress' ? '…'
+    : 'i';
+  const color = kind === 'error' ? '#800000' : '#000080';
   return (
     <span
       style={{
-        width: 10,
-        height: 10,
-        borderRadius: 10,
-        background: color,
+        width: 18,
+        height: 18,
+        background: '#FFFFFF',
+        boxShadow: 'var(--bevel-input)',
+        color,
+        fontWeight: 700,
+        fontSize: 12,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         flexShrink: 0,
+        fontFamily: 'var(--font-sans)',
       }}
-    />
+    >
+      {glyph}
+    </span>
   );
 }

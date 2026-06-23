@@ -14,6 +14,8 @@ export function InOutButtons() {
 
   const onIn = () => usePlayerStore.getState().setInPoint();
   const onOut = () => usePlayerStore.getState().setOutPoint();
+  const onClearIn = () => usePlayerStore.getState().clearInPoint();
+  const onClearOut = () => usePlayerStore.getState().clearOutPoint();
   const onClipToggle = () => {
     const s = usePlayerStore.getState();
     if (s.isClipped) s.undoClip();
@@ -26,10 +28,19 @@ export function InOutButtons() {
     <div className="flex items-center gap-1.5">
       <button
         className="btn-secondary"
+        disabled={disabledInOut || inFrame == null}
+        onClick={onClearIn}
+        title="IN点を解除 (Shift+[)"
+        style={{ width: 24, minWidth: 24, padding: 0, fontSize: 10 }}
+      >
+        ✕
+      </button>
+      <button
+        className="btn-secondary"
         disabled={disabledInOut}
         onClick={onIn}
-        title="IN点を設定 (I)"
-        style={{ minWidth: 36 }}
+        title="IN点を設定 ([)"
+        style={{ minWidth: 32 }}
       >
         <span style={{ color: 'var(--accent-magenta)' }}>{'{'}</span>
       </button>
@@ -37,10 +48,19 @@ export function InOutButtons() {
         className="btn-secondary"
         disabled={disabledInOut}
         onClick={onOut}
-        title="OUT点を設定 (O)"
-        style={{ minWidth: 36 }}
+        title="OUT点を設定 (])"
+        style={{ minWidth: 32 }}
       >
         <span style={{ color: 'var(--accent-purple)' }}>{'}'}</span>
+      </button>
+      <button
+        className="btn-secondary"
+        disabled={disabledInOut || outFrame == null}
+        onClick={onClearOut}
+        title="OUT点を解除 (Shift+])"
+        style={{ width: 24, minWidth: 24, padding: 0, fontSize: 10 }}
+      >
+        ✕
       </button>
       <button
         className="btn-primary"

@@ -71,4 +71,21 @@ export function registerIpcHandlers() {
   // Returns a file path captured from argv at startup ("Open with" launches),
   // then clears it so subsequent calls return null.
   ipcMain.handle('app:getPendingOpenFile', () => consumePendingOpenFile());
+
+  // Window controls for the custom Win95-style title bar.
+  ipcMain.handle('window:minimize', (e) => {
+    BrowserWindow.fromWebContents(e.sender)?.minimize();
+  });
+  ipcMain.handle('window:toggleMaximize', (e) => {
+    const w = BrowserWindow.fromWebContents(e.sender);
+    if (!w) return;
+    if (w.isMaximized()) w.unmaximize();
+    else w.maximize();
+  });
+  ipcMain.handle('window:close', (e) => {
+    BrowserWindow.fromWebContents(e.sender)?.close();
+  });
+  ipcMain.handle('window:isMaximized', (e) => {
+    return BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false;
+  });
 }

@@ -1,6 +1,6 @@
 {
   "name": "refplayer",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "Local video player and editor for animation/drawing reference",
   "main": "out/main/index.js",
   "author": "RefPlayer",

@@ -31,8 +31,14 @@ export function useFrameAccuratePlayback(
       if (s.sourceFps > 0) {
         const sourceFrame = timeToFrame(metadata.mediaTime, s.sourceFps);
         const displayFrame = sourceToDisplayFrame(sourceFrame, s.sourceFps, s.displayFps);
-        const start = s.getEffectiveStartFrame();
-        const end = s.getEffectiveEndFrame();
+
+        // When repeat is on and IN/OUT points are set (but not yet applied as a
+        // clip), loop between IN and OUT during playback.
+        const inOutSet =
+          s.inFrame != null && s.outFrame != null && s.outFrame > s.inFrame;
+        const useInOutLoop = s.repeat && !s.isClipped && inOutSet;
+        const start = useInOutLoop ? (s.inFrame as number) : s.getEffectiveStartFrame();
+        const end = useInOutLoop ? (s.outFrame as number) : s.getEffectiveEndFrame();
 
         if (s.isPlaying && displayFrame >= end) {
           if (s.repeat) {
@@ -48,6 +54,7 @@ export function useFrameAccuratePlayback(
         } else if (s.isPlaying && displayFrame < start) {
           lastCommittedFrameRef.current = start;
           s.seekToFrame(start);
+          video.currentTime = displayFrameToTime(start, s.sourceFps, s.displayFps);
         } else if (displayFrame !== lastCommittedFrameRef.current) {
           lastCommittedFrameRef.current = displayFrame;
           s.setCurrentFrame(displayFrame);

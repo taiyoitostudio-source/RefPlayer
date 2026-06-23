@@ -60,6 +60,24 @@ const api = {
 
   getPendingOpenFile: () =>
     ipcRenderer.invoke('app:getPendingOpenFile') as Promise<string | null>,
+
+  // Window controls for the custom Win95-style title bar.
+  windowControls: {
+    minimize: () => ipcRenderer.invoke('window:minimize') as Promise<void>,
+    toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize') as Promise<void>,
+    close: () => ipcRenderer.invoke('window:close') as Promise<void>,
+    isMaximized: () => ipcRenderer.invoke('window:isMaximized') as Promise<boolean>,
+    onMaximizedChange: (cb: (maximized: boolean) => void) => {
+      const l = (_: unknown, m: boolean) => cb(m);
+      ipcRenderer.on('window:stateChanged', l);
+      return () => ipcRenderer.removeListener('window:stateChanged', l);
+    },
+    onFocusChange: (cb: (focused: boolean) => void) => {
+      const l = (_: unknown, f: boolean) => cb(f);
+      ipcRenderer.on('window:focusChanged', l);
+      return () => ipcRenderer.removeListener('window:focusChanged', l);
+    },
+  },
   onOpenFile: (cb: (path: string) => void) => {
     const listener = (_: unknown, path: string) => cb(path);
     ipcRenderer.on('app:openFile', listener);

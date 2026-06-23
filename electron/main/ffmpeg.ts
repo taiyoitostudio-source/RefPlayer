@@ -169,10 +169,24 @@ function runFfmpegEncode(
 function buildArgs(opts: ExportOpts, encoder: H264Encoder | null): string[] {
   const { inputPath, outputPath, startSec, endSec, targetFps, isClipped } = opts;
   const args: string[] = ['-y'];
+
+  // Input -ss does a fast seek (keyframe-snap, then -accurate_seek decodes &
+  // discards up to position). After that, output timestamps are reset to 0 —
+  // so the output-side -ss / -to below must be RELATIVE to the input seek
+  // point, not the original timeline. Without this compensation the wrong
+  // section of the video gets exported.
+  const inputSs = isClipped ? Math.max(0, startSec - 2) : 0;
+  const outSs = startSec - inputSs;
+  const outTo = endSec - inputSs;
+
   if (isClipped) {
-    args.push('-ss', startSec.toString(), '-to', endSec.toString());
+    args.push('-ss', inputSs.toString());
   }
   args.push('-i', inputPath);
+
+  if (isClipped) {
+    args.push('-ss', outSs.toString(), '-to', outTo.toString());
+  }
 
   if (encoder === null) {
     args.push('-c', 'copy');

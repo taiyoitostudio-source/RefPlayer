@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { TitleBar } from './components/TitleBar';
 import { TopBar } from './components/TopBar';
 import { VideoPreview } from './components/VideoPreview';
 import { Timeline } from './components/Timeline';
@@ -67,6 +68,7 @@ export function App() {
           overflow: 'hidden',
         }}
       >
+        <TitleBar title="RefPlayer" />
         <TopBar />
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
           <VideoPreview />

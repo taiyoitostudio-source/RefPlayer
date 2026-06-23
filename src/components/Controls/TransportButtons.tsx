@@ -14,25 +14,11 @@ export function TransportButtons() {
         <StepBackIcon />
       </button>
       <button
+        className="btn-icon"
         onClick={togglePlay}
         disabled={!filePath}
         title={isPlaying ? '停止 (Space)' : '再生 (Space)'}
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 22,
-          background: 'var(--gradient-accent)',
-          color: 'white',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: 'var(--shadow-soft)',
-          transition: 'filter 120ms ease, transform 80ms ease',
-          opacity: filePath ? 1 : 0.4,
-          cursor: filePath ? 'pointer' : 'not-allowed',
-        }}
-        onMouseEnter={(e) => filePath && ((e.currentTarget.style.filter = 'brightness(1.1)'))}
-        onMouseLeave={(e) => ((e.currentTarget.style.filter = ''))}
+        style={{ width: 36, height: 28 }}
       >
         {isPlaying ? <PauseIcon /> : <PlayIcon />}
       </button>

@@ -10,7 +10,9 @@ export type ActionId =
   | 'playPause' | 'stepBack' | 'stepForward'
   | 'setIn' | 'setOut' | 'applyClipToggle'
   | 'toggleRepeat' | 'openSettings'
-  | 'zoomTimelineIn' | 'zoomTimelineOut';
+  | 'zoomTimelineIn' | 'zoomTimelineOut'
+  | 'volumeUp' | 'volumeDown' | 'muteToggle'
+  | 'clearIn' | 'clearOut';
 
 export type Settings = {
   shortcuts: Record<ActionId, KeyCombo>;
@@ -70,6 +72,14 @@ declare global {
       openPluginsFolder: () => Promise<void>;
       getPendingOpenFile: () => Promise<string | null>;
       onOpenFile: (cb: (path: string) => void) => () => void;
+      windowControls: {
+        minimize: () => Promise<void>;
+        toggleMaximize: () => Promise<void>;
+        close: () => Promise<void>;
+        isMaximized: () => Promise<boolean>;
+        onMaximizedChange: (cb: (maximized: boolean) => void) => () => void;
+        onFocusChange: (cb: (focused: boolean) => void) => () => void;
+      };
       pathToFileURL: (path: string) => string;
     };
   }

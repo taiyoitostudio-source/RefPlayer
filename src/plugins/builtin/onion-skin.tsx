@@ -273,35 +273,20 @@ function OnionPanel({ api }: { api: PluginAPI }) {
 
 function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{label}</span>
-      <button
-        onClick={() => onChange(!value)}
-        style={{
-          width: 40,
-          height: 22,
-          borderRadius: 11,
-          background: value ? 'var(--gradient-accent)' : 'var(--bg-elevated)',
-          position: 'relative',
-          transition: 'background 150ms ease',
-          border: '1px solid var(--border)',
-        }}
-      >
-        <span
-          style={{
-            position: 'absolute',
-            top: 2,
-            left: value ? 20 : 2,
-            width: 16,
-            height: 16,
-            borderRadius: 8,
-            background: '#FFFFFF',
-            transition: 'left 150ms ease',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-          }}
-        />
-      </button>
-    </div>
+    <label
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        cursor: 'pointer',
+        fontSize: 11,
+        color: 'var(--text-primary)',
+      }}
+      onClick={() => onChange(!value)}
+    >
+      <span className={`win95-checkbox${value ? ' checked' : ''}`} />
+      <span>{label}</span>
+    </label>
   );
 }
 
@@ -335,7 +320,7 @@ function ColorRow({ label, value, onChange }: { label: string; value: string; on
         type="color"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        style={{ width: 44, height: 28, padding: 0, border: '1px solid var(--border)', borderRadius: 6, background: 'transparent', cursor: 'pointer' }}
+        style={{ width: 44, height: 24, padding: 2, border: 'none', boxShadow: 'var(--bevel-raised)', background: '#C0C0C0', cursor: 'pointer' }}
       />
     </div>
   );

@@ -12,6 +12,11 @@ const DEFAULT_SHORTCUTS: Record<ActionId, KeyCombo> = {
   openSettings:     { key: ',', ctrl: true },
   zoomTimelineIn:   { key: '=', ctrl: true },
   zoomTimelineOut:  { key: '-', ctrl: true },
+  volumeUp:         { key: 'ArrowUp' },
+  volumeDown:       { key: 'ArrowDown' },
+  muteToggle:       { key: 'm' },
+  clearIn:          { key: '[', shift: true },
+  clearOut:         { key: ']', shift: true },
 };
 
 const DEFAULTS: Settings = {
@@ -35,13 +40,24 @@ type SettingsStoreState = Settings & {
   receiveExternal: (s: Settings) => void;
 };
 
+// Deep-merge persisted settings with defaults so that keys added in newer
+// versions (e.g. new shortcuts) are filled in for users with old data on disk.
+function mergeWithDefaults(s: Partial<Settings> | undefined | null): Settings {
+  const incomingShortcuts = (s?.shortcuts ?? {}) as Partial<Record<ActionId, KeyCombo>>;
+  return {
+    ...DEFAULTS,
+    ...(s ?? {}),
+    shortcuts: { ...DEFAULT_SHORTCUTS, ...incomingShortcuts } as Record<ActionId, KeyCombo>,
+  };
+}
+
 export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   ...DEFAULTS,
   loaded: false,
 
   load: async () => {
-    const s = (await window.refplayer.getSettings()) as Settings;
-    set({ ...DEFAULTS, ...s, loaded: true });
+    const raw = (await window.refplayer.getSettings()) as Partial<Settings>;
+    set({ ...mergeWithDefaults(raw), loaded: true });
   },
 
   update: async (partial) => {
@@ -62,5 +78,5 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
     await window.refplayer.setSettings({ shortcuts: DEFAULT_SHORTCUTS });
   },
 
-  receiveExternal: (s) => set({ ...DEFAULTS, ...s, loaded: true }),
+  receiveExternal: (s) => set({ ...mergeWithDefaults(s), loaded: true }),
 }));

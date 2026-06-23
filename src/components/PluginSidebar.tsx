@@ -11,13 +11,14 @@ export function PluginSidebar() {
     <AnimatePresence initial={false}>
       {open && (
         <motion.aside
-          initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 'var(--sidebar-w)', opacity: 1 }}
-          exit={{ width: 0, opacity: 0 }}
-          transition={{ duration: 0.22, ease: 'easeOut' }}
+          initial={{ width: 'var(--sidebar-w)' }}
+          animate={{ width: 'var(--sidebar-w)' }}
+          exit={{ width: 0 }}
+          transition={{ duration: 0 }}
           style={{
             background: 'var(--bg-panel)',
-            borderLeft: '1px solid var(--border)',
+            borderLeft: '1px solid #808080',
+            boxShadow: 'inset 1px 0 0 #FFFFFF',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
@@ -25,27 +26,25 @@ export function PluginSidebar() {
         >
           <div
             style={{
-              padding: '14px 16px 10px',
-              fontFamily: 'var(--font-mono)',
+              padding: '8px 10px 6px',
+              fontFamily: 'var(--font-sans)',
               fontSize: 11,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: 'var(--text-muted)',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
             }}
           >
             拡張機能
           </div>
-          <div style={{ overflowY: 'auto', flex: 1, padding: '0 12px 16px' }}>
+          <div style={{ overflowY: 'auto', flex: 1, padding: '0 8px 12px' }}>
             {panels.length === 0 ? (
               <div
+                className="win95-sunken"
                 style={{
-                  padding: 20,
-                  fontSize: 12,
+                  padding: 16,
+                  fontSize: 11,
                   color: 'var(--text-muted)',
                   textAlign: 'center',
-                  border: '1px dashed var(--border-strong)',
-                  borderRadius: 'var(--radius-md)',
-                  margin: 8,
+                  margin: 4,
                 }}
               >
                 プラグインなし
@@ -79,7 +78,7 @@ function PanelCard({
     <div
       className="panel"
       style={{
-        marginTop: 10,
+        marginTop: 8,
         overflow: 'hidden',
       }}
     >
@@ -90,23 +89,19 @@ function PanelCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '10px 14px',
-          fontSize: 13,
-          fontWeight: 600,
+          padding: '4px 8px',
+          fontSize: 11,
+          fontWeight: 700,
           color: 'var(--text-primary)',
-          background: open ? 'var(--gradient-accent-soft)' : 'transparent',
+          background: '#C0C0C0',
+          boxShadow: 'var(--bevel-raised)',
         }}
       >
         <span>{title}</span>
-        <span style={{
-          transform: open ? 'rotate(90deg)' : 'rotate(0)',
-          transition: 'transform 150ms ease',
-          color: 'var(--accent-magenta)',
-          fontSize: 12,
-        }}>▶</span>
+        <span style={{ color: '#000000', fontSize: 10 }}>{open ? '▼' : '▶'}</span>
       </button>
       {open && (
-        <div style={{ padding: '10px 14px 14px' }}>
+        <div style={{ padding: '8px 10px 10px' }}>
           {isMountFn ? (
             <DomPanelMount mount={children as PanelMountFn} />
           ) : (

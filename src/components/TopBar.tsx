@@ -71,20 +71,8 @@ export function TopBar() {
         </button>
       </div>
 
-      <div
-        className="text-mono"
-        style={{
-          fontSize: 16,
-          fontWeight: 700,
-          letterSpacing: '0.08em',
-          background: 'var(--gradient-accent)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-        }}
-      >
-        RefPlayer
-      </div>
+      <div />
+
 
       <div className="flex items-center gap-2">
         <button

@@ -144,28 +144,27 @@ function EmptyState() {
     <div
       style={{
         textAlign: 'center',
-        color: '#9892AB',
+        color: '#FFFFFF',
         userSelect: 'none',
       }}
     >
       <div
+        className="win95-raised"
         style={{
           display: 'inline-flex',
-          width: 88,
-          height: 88,
+          width: 64,
+          height: 64,
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 22,
-          marginBottom: 14,
-          background: 'linear-gradient(135deg, rgba(139,30,92,0.18), rgba(75,42,138,0.18))',
+          marginBottom: 12,
         }}
       >
-        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#C49AD2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="6" width="14" height="12" rx="2" />
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
+          <rect x="3" y="6" width="14" height="12" />
           <path d="m17 10 4-2v8l-4-2" />
         </svg>
       </div>
-      <div className="text-mono" style={{ fontSize: 13, letterSpacing: '0.08em' }}>
+      <div style={{ fontSize: 11, color: '#FFFFFF' }}>
         動画を選択してください
       </div>
     </div>

@@ -52,6 +52,8 @@ type Actions = {
   setOutPoint: () => void;
   setInFrame: (frame: number | null) => void;
   setOutFrame: (frame: number | null) => void;
+  clearInPoint: () => void;
+  clearOutPoint: () => void;
   applyClip: () => void;
   undoClip: () => void;
   setVolume: (v: number) => void;
@@ -181,6 +183,14 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   setOutFrame: (frame) => {
     if (get().isClipped) return;
     set({ outFrame: frame });
+  },
+  clearInPoint: () => {
+    if (get().isClipped) return;
+    set({ inFrame: null });
+  },
+  clearOutPoint: () => {
+    if (get().isClipped) return;
+    set({ outFrame: null });
   },
   applyClip: () => {
     const s = get();

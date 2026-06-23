@@ -51,9 +51,9 @@ function createMainWindow() {
     y: bounds.y,
     minWidth: 960,
     minHeight: 600,
-    backgroundColor: '#FBFAFD',
+    backgroundColor: '#C0C0C0',
     title: 'RefPlayer',
-    autoHideMenuBar: true,
+    frame: false,
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -67,6 +67,11 @@ function createMainWindow() {
   });
 
   mainWindow.on('ready-to-show', () => mainWindow?.show());
+
+  mainWindow.on('maximize', () => mainWindow?.webContents.send('window:stateChanged', true));
+  mainWindow.on('unmaximize', () => mainWindow?.webContents.send('window:stateChanged', false));
+  mainWindow.on('focus', () => mainWindow?.webContents.send('window:focusChanged', true));
+  mainWindow.on('blur', () => mainWindow?.webContents.send('window:focusChanged', false));
 
   mainWindow.on('close', () => {
     if (!mainWindow) return;
@@ -96,9 +101,9 @@ export function openSettingsWindow() {
     height: 640,
     parent: mainWindow ?? undefined,
     modal: false,
-    backgroundColor: '#FBFAFD',
+    backgroundColor: '#C0C0C0',
     title: '設定 — RefPlayer',
-    autoHideMenuBar: true,
+    frame: false,
     show: false,
     resizable: true,
     webPreferences: {
@@ -111,6 +116,10 @@ export function openSettingsWindow() {
   });
   settingsWindow.on('ready-to-show', () => settingsWindow?.show());
   settingsWindow.on('closed', () => { settingsWindow = null; });
+  settingsWindow.on('maximize', () => settingsWindow?.webContents.send('window:stateChanged', true));
+  settingsWindow.on('unmaximize', () => settingsWindow?.webContents.send('window:stateChanged', false));
+  settingsWindow.on('focus', () => settingsWindow?.webContents.send('window:focusChanged', true));
+  settingsWindow.on('blur', () => settingsWindow?.webContents.send('window:focusChanged', false));
 
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
     settingsWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/settings.html`);
